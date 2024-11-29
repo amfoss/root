@@ -4,7 +4,7 @@ use std::sync::Arc;
 use chrono::NaiveDate;
 
 
-use crate::db::{member::Member, attendance::Attendance};
+use crate::db::{member::Member, attendance::Attendance, member::StreakUpdate};
 
 pub struct QueryRoot;
 
@@ -35,5 +35,18 @@ impl QueryRoot {
         .fetch_all(pool.as_ref())
         .await?;
         Ok(attendance_list)
+    }
+    async fn get_streak(
+        &self,
+        ctx: &Context<'_>,
+        id: i32,
+    ) -> Result<StreakUpdate, sqlx::Error> {
+        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
+        let streak = sqlx::query_as::<_, StreakUpdate>("SELECT * FROM StreakUpdate WHERE id = $1")
+        .bind(id)       
+        .fetch_one(pool.as_ref())
+        .await?;
+
+        Ok(streak)
     }
 }

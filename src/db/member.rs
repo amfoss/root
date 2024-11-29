@@ -15,4 +15,12 @@ pub struct Member {
     pub year: i32,
     pub macaddress: String,
     pub discord_id: Option<String>,
+    pub group_id: Option<i32>,
+}
+
+#[derive(FromRow, SimpleObject)]
+pub struct StreakUpdate {
+    pub id: i32,
+    pub streak: Option<i32>,
+    pub max_streak: Option<i32>,
 }

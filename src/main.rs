@@ -4,11 +4,10 @@ use crate::routes::graphiql;
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
 use axum::{routing::get, Router};
-use chrono::{Local, NaiveTime};
+use chrono::Local;
 use root::attendance::scheduled_task::scheduled_task;
 use shuttle_runtime::SecretStore;
 use sqlx::PgPool;
-use std::time::Duration;
 use std::{env, sync::Arc};
 use tokio::task;
 use tokio::time::{sleep_until, Instant};
@@ -25,18 +24,18 @@ struct MyState {
     secret_key: String,
 }
 
-//Main method
 #[shuttle_runtime::main]
 async fn main(
     #[shuttle_shared_db::Postgres] pool: PgPool,
     #[shuttle_runtime::Secrets] secrets: SecretStore,
 ) -> shuttle_axum::ShuttleAxum {
+    // TODO: Explain?
     env::set_var("PGOPTIONS", "-c ignore_version=true");
 
     sqlx::migrate!()
         .run(&pool)
         .await
-        .expect("Failed to run migrations");
+        .expect("Failed to run migrations.");
 
     let pool = Arc::new(pool);
     let secret_key = secrets.get("ROOT_SECRET").expect("ROOT_SECRET not found");
@@ -50,6 +49,7 @@ async fn main(
         secret_key: secret_key.clone(),
     };
 
+    // TODO: Restrict to amD and Home
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(tower_http::cors::Any)
@@ -62,27 +62,29 @@ async fn main(
         )
         .with_state(state)
         .layer(cors);
+
     task::spawn(async move {
-        schedule_task_at_midnight(pool.clone()).await; // Call the function after 10 seconds
+        schedule_task_at_midnight(pool.clone()).await;
     });
+
     Ok(router.into())
 }
 
-//Ticker for calling the scheduled task
+// Sleep till midnight, then execute the task, repeat.
 async fn schedule_task_at_midnight(pool: Arc<PgPool>) {
     loop {
         let now = Local::now();
+        let next_midnight = (now + chrono::Duration::days(1))
+            .date_naive()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
 
-        let tomorrow = now.date_naive().succ_opt().unwrap();
-        let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
-        let next_midnight = tomorrow.and_time(midnight);
-
-        let now_naive = now.naive_local();
-        let duration_until_midnight = next_midnight.signed_duration_since(now_naive);
-        let sleep_duration = Duration::from_secs(duration_until_midnight.num_seconds() as u64 + 60);
+        let duration_until_midnight = next_midnight.signed_duration_since(now.naive_local());
+        let sleep_duration = tokio::time::Duration::from_secs(duration_until_midnight.num_seconds() as u64);
 
         sleep_until(Instant::now() + sleep_duration).await;
         scheduled_task(pool.clone()).await;
+        // TODO: Use tracing
         print!("done");
     }
 }

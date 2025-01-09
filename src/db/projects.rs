@@ -1,5 +1,5 @@
-use sqlx::FromRow;
 use async_graphql::SimpleObject;
+use sqlx::FromRow;
 
 #[derive(FromRow, SimpleObject)]
 pub struct ActiveProjects {

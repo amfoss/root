@@ -1,41 +1,44 @@
-use async_graphql::{Context, Object};
 use ::chrono::Local;
+use async_graphql::{Context, Object};
 use chrono::{NaiveDate, NaiveTime};
 use chrono_tz::Asia::Kolkata;
-use sqlx::PgPool;
-use sqlx::types::chrono;
-use std::sync::Arc;
-use hmac::{Hmac,Mac};
+use hmac::{Hmac, Mac};
 use sha2::Sha256;
-
+use sqlx::types::chrono;
+use sqlx::PgPool;
+use std::sync::Arc;
 
 type HmacSha256 = Hmac<Sha256>;
 
-use crate::db::{attendance::Attendance, leaderboard::{CodeforcesStats, LeetCodeStats}, member::Member, member::StreakUpdate, projects::ActiveProjects};
+use crate::db::{
+    attendance::Attendance,
+    leaderboard::{CodeforcesStats, LeetCodeStats},
+    member::Member,
+    member::StreakUpdate,
+    projects::ActiveProjects,
+};
 
 pub struct MutationRoot;
 
 #[Object]
 impl MutationRoot {
-
     //Mutation for adding members to the Member table
     async fn add_member(
-        &self, 
-        ctx: &Context<'_>, 
-        rollno: String, 
-        name: String, 
-        hostel: String, 
-        email: String, 
-        sex: String, 
+        &self,
+        ctx: &Context<'_>,
+        rollno: String,
+        name: String,
+        hostel: String,
+        email: String,
+        sex: String,
         year: i32,
         macaddress: String,
         discord_id: String,
         group_id: i32,
-
     ) -> Result<Member, sqlx::Error> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
-
-
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
         let member = sqlx::query_as::<_, Member>(
             "INSERT INTO Member (rollno, name, hostel, email, sex, year, macaddress, discord_id, group_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *"
@@ -55,7 +58,6 @@ impl MutationRoot {
         Ok(member)
     }
 
-    
     async fn edit_member(
         &self,
         ctx: &Context<'_>,
@@ -66,25 +68,31 @@ impl MutationRoot {
         discord_id: String,
         group_id: i32,
         hmac_signature: String,
-    ) -> Result<Member,sqlx::Error> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
-        
-        let secret_key = ctx.data::<String>().expect("HMAC secret not found in context");
+    ) -> Result<Member, sqlx::Error> {
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
-        let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes()).expect("HMAC can take key of any size");
+        let secret_key = ctx
+            .data::<String>()
+            .expect("HMAC secret not found in context");
 
-        let message = format!("{}{}{}{}{}{}", id, hostel, year, macaddress, discord_id, group_id);
+        let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes())
+            .expect("HMAC can take key of any size");
+
+        let message = format!(
+            "{}{}{}{}{}{}",
+            id, hostel, year, macaddress, discord_id, group_id
+        );
         mac.update(message.as_bytes());
 
         let expected_signature = mac.finalize().into_bytes();
-        
+
         // Convert the received HMAC signature from the client to bytes for comparison
         let received_signature = hex::decode(hmac_signature)
             .map_err(|_| sqlx::Error::Protocol("Invalid HMAC signature".into()))?;
-        
 
         if expected_signature.as_slice() != received_signature.as_slice() {
-            
             return Err(sqlx::Error::Protocol("HMAC verification failed".into()));
         }
 
@@ -99,9 +107,8 @@ impl MutationRoot {
                 group_id = CASE WHEN $5 = 0 THEN group_id ELSE $5 END
             WHERE id = $6
             RETURNING *
-            "
+            ",
         )
-
         .bind(hostel)
         .bind(year)
         .bind(macaddress)
@@ -113,27 +120,25 @@ impl MutationRoot {
 
         Ok(member)
     }
-    
+
     //Mutation for adding attendance to the Attendance table
     async fn add_attendance(
-       
         &self,
-        
+
         ctx: &Context<'_>,
         id: i32,
         date: NaiveDate,
         timein: NaiveTime,
         timeout: NaiveTime,
         is_present: bool,
-      
     ) -> Result<Attendance, sqlx::Error> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
-
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
         let attendance = sqlx::query_as::<_, Attendance>(
             "INSERT INTO Attendance (id, date, timein, timeout, is_present) VALUES ($1, $2, $3, $4, $5) RETURNING *"
         )
-        
         .bind(id)
         .bind(date)
         .bind(timein)
@@ -144,34 +149,36 @@ impl MutationRoot {
 
         Ok(attendance)
     }
-    
+
     async fn mark_attendance(
         &self,
         ctx: &Context<'_>,
         id: i32,
         date: NaiveDate,
         is_present: bool,
-        hmac_signature: String, 
-    ) -> Result<Attendance,sqlx::Error> {
-        
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
+        hmac_signature: String,
+    ) -> Result<Attendance, sqlx::Error> {
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
-        let secret_key = ctx.data::<String>().expect("HMAC secret not found in context");
+        let secret_key = ctx
+            .data::<String>()
+            .expect("HMAC secret not found in context");
 
-        let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes()).expect("HMAC can take key of any size");
+        let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes())
+            .expect("HMAC can take key of any size");
 
         let message = format!("{}{}{}", id, date, is_present);
         mac.update(message.as_bytes());
 
         let expected_signature = mac.finalize().into_bytes();
-      
+
         // Convert the received HMAC signature from the client to bytes for comparison
         let received_signature = hex::decode(hmac_signature)
             .map_err(|_| sqlx::Error::Protocol("Invalid HMAC signature".into()))?;
-        
 
         if expected_signature.as_slice() != received_signature.as_slice() {
-            
             return Err(sqlx::Error::Protocol("HMAC verification failed".into()));
         }
 
@@ -186,7 +193,7 @@ impl MutationRoot {
                 is_present = $2
             WHERE id = $3 AND date = $4
             RETURNING *
-            "
+            ",
         )
         .bind(current_time)
         .bind(is_present)
@@ -199,14 +206,16 @@ impl MutationRoot {
     }
 
     //here when user changes the handle, it just updates the handle in the database without updating the other values till midnight
-    
+
     async fn add_or_update_leetcode_username(
         &self,
         ctx: &Context<'_>,
         member_id: i32,
         username: String,
     ) -> Result<LeetCodeStats, sqlx::Error> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
         let result = sqlx::query_as::<_, LeetCodeStats>(
             "
@@ -231,7 +240,9 @@ impl MutationRoot {
         member_id: i32,
         handle: String,
     ) -> Result<CodeforcesStats, sqlx::Error> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
         let result = sqlx::query_as::<_, CodeforcesStats>(
             "
@@ -255,20 +266,22 @@ impl MutationRoot {
         id: i32,
         has_sent_update: bool,
     ) -> Result<StreakUpdate, sqlx::Error> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
         let streak_info = sqlx::query_as::<_, StreakUpdate>(
             "
             SELECT id, streak, max_streak
             FROM StreakUpdate
             WHERE id = $1
-            "
+            ",
         )
         .bind(id)
         .fetch_optional(pool.as_ref())
         .await?;
 
-        match streak_info{
+        match streak_info {
             Some(mut member) => {
                 let current_streak = member.streak.unwrap_or(0);
                 let max_streak = member.max_streak.unwrap_or(0);
@@ -285,7 +298,7 @@ impl MutationRoot {
                     SET streak = $1, max_streak = $2
                     WHERE id = $3
                     RETURNING *
-                    "
+                    ",
                 )
                 .bind(new_streak)
                 .bind(new_max_streak)
@@ -294,14 +307,14 @@ impl MutationRoot {
                 .await?;
 
                 Ok(updated_member)
-            },
+            }
             None => {
                 let new_member = sqlx::query_as::<_, StreakUpdate>(
                     "
                     INSERT INTO StreakUpdate (id, streak, max_streak)
                     VALUES ($1, $2, $3)
                     RETURNING *
-                    "
+                    ",
                 )
                 .bind(id)
                 .bind(0)
@@ -318,16 +331,18 @@ impl MutationRoot {
         &self,
         ctx: &Context<'_>,
         id: i32,
-        project_name:String,
-    ) -> Result<ActiveProjects,sqlx::Error> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
+        project_name: String,
+    ) -> Result<ActiveProjects, sqlx::Error> {
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
-        let active_project = sqlx::query_as::<_,ActiveProjects>(
+        let active_project = sqlx::query_as::<_, ActiveProjects>(
             "
             INSERT INTO ActiveProjects (member_id,project_title)
             VALUES ($1,$2)
             RETURNING *
-            "
+            ",
         )
         .bind(id)
         .bind(project_name)
@@ -341,15 +356,17 @@ impl MutationRoot {
         &self,
         ctx: &Context<'_>,
         project_id: i32,
-    ) -> Result<ActiveProjects,sqlx::Error> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool not found in context");
+    ) -> Result<ActiveProjects, sqlx::Error> {
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
 
-        let active_project = sqlx::query_as::<_,ActiveProjects>(
+        let active_project = sqlx::query_as::<_, ActiveProjects>(
             "
             DELETE FROM ActiveProjects
             WHERE id = $1
             RETURNING *
-            "
+            ",
         )
         .bind(project_id)
         .fetch_one(pool.as_ref())
@@ -357,5 +374,4 @@ impl MutationRoot {
 
         Ok(active_project)
     }
-
 }

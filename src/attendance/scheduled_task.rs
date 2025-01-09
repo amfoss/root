@@ -57,7 +57,7 @@ pub async fn scheduled_task(pool: Arc<PgPool>) {
 
                 if let Ok(Some(leetcode_stats)) = leetcode_username {
                     let username = leetcode_stats.leetcode_username.clone();
-                    
+
                     // Fetch and update LeetCode stats
                     match fetch_leetcode_stats(pool.clone(), member.id, &username).await {
                         Ok(_) => println!("LeetCode stats updated for member ID: {}", member.id),
@@ -104,8 +104,13 @@ pub async fn scheduled_task(pool: Arc<PgPool>) {
 
 // Function to update attendance streak
 async fn update_attendance_streak(member_id: i32, pool: &sqlx::PgPool) {
-    let today = chrono::Local::now().with_timezone(&chrono_tz::Asia::Kolkata).naive_local();
-    let yesterday = today.checked_sub_signed(chrono::Duration::hours(12)).unwrap().date();
+    let today = chrono::Local::now()
+        .with_timezone(&chrono_tz::Asia::Kolkata)
+        .naive_local();
+    let yesterday = today
+        .checked_sub_signed(chrono::Duration::hours(12))
+        .unwrap()
+        .date();
 
     if today.day() == 1 {
         let _ = sqlx::query(
@@ -176,6 +181,9 @@ async fn update_attendance_streak(member_id: i32, pool: &sqlx::PgPool) {
             println!("Sreak not incremented for member ID: {}", member_id);
         }
         Ok(_) => eprintln!("Unexpected attendance value for member ID: {}", member_id),
-        Err(e) => eprintln!("Error checking attendance for member ID {}: {:?}", member_id, e),
+        Err(e) => eprintln!(
+            "Error checking attendance for member ID {}: {:?}",
+            member_id, e
+        ),
     }
 }

@@ -1,8 +1,7 @@
-use std::sync::Arc;
 use sqlx::PgPool;
+use std::sync::Arc;
 
 pub async fn update_leaderboard(pool: Arc<PgPool>) -> Result<(), Box<dyn std::error::Error>> {
-    
     let leetcode_stats: Result<Vec<(i32, i32, i32, i32, i32, i32, i32, i32)>, _> =
         sqlx::query_as::<_, (i32, i32, i32, i32, i32, i32, i32, i32)>(
             "SELECT id, member_id, problems_solved, easy_solved, medium_solved, hard_solved, contests_participated, best_rank 
@@ -18,7 +17,6 @@ pub async fn update_leaderboard(pool: Arc<PgPool>) -> Result<(), Box<dyn std::er
             return Err(Box::new(e));
         }
     };
-
 
     let codeforces_stats: Result<Vec<(i32, i32, i32, i32, i32)>, _> =
         sqlx::query_as::<_, (i32, i32, i32, i32, i32)>(
@@ -49,7 +47,6 @@ pub async fn update_leaderboard(pool: Arc<PgPool>) -> Result<(), Box<dyn std::er
         )
         .collect();
 
-   
     for (
         _,
         member_id,

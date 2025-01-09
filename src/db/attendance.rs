@@ -1,6 +1,6 @@
+use async_graphql::SimpleObject;
 use chrono::{NaiveDate, NaiveTime};
 use sqlx::FromRow;
-use async_graphql::SimpleObject;
 
 //Struct for the Attendance table
 #[derive(FromRow, SimpleObject)]
@@ -22,15 +22,15 @@ pub struct AttendanceStreak {
 
 #[derive(FromRow, SimpleObject)]
 pub struct AttendanceSummary {
-    pub max_days:i64,
+    pub max_days: i64,
     pub member_attendance: Vec<MemberAttendance>,
     pub daily_count: Vec<DailyCount>,
 }
 
 #[derive(FromRow, SimpleObject)]
 pub struct MemberAttendance {
-    pub id:i32,
-    pub present_days:i64,
+    pub id: i32,
+    pub present_days: i64,
 }
 
 #[derive(FromRow, SimpleObject)]

@@ -1,4 +1,4 @@
-//need this to expose db module for tests
+// Need this to expose DB module for tests
 pub mod attendance;
 pub mod db;
 pub mod leaderboard;

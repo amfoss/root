@@ -2,7 +2,6 @@ use async_graphql::SimpleObject;
 use chrono::{NaiveDate, NaiveTime};
 use sqlx::FromRow;
 
-//Struct for the Attendance table
 #[derive(FromRow, SimpleObject)]
 pub struct Attendance {
     pub id: i32,

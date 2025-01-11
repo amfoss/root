@@ -1,11 +1,11 @@
-use crate::db::{
+use crate::models::{
     attendance::Attendance,
     leaderboard::{CodeforcesStatsWithName, LeaderboardWithMember, LeetCodeStatsWithName},
     member::{Member, StreakUpdate},
 };
 use async_graphql::{Context, Object};
 use chrono::NaiveDate;
-use root::db::{
+use root::models::{
     attendance::{AttendanceStreak, AttendanceSummary, DailyCount, MemberAttendance},
     projects::ActiveProjects,
 };

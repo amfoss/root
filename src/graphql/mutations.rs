@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 type HmacSha256 = Hmac<Sha256>;
 
-use crate::db::{
+use crate::models::{
     attendance::Attendance,
     leaderboard::{CodeforcesStats, LeetCodeStats},
     member::Member,

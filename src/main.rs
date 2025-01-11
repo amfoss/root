@@ -13,9 +13,9 @@ use tokio::task;
 use tokio::time::{sleep_until, Instant};
 use tower_http::cors::{Any, CorsLayer};
 
-mod db;
 mod graphql;
 mod leaderboard;
+mod models;
 mod routes;
 
 #[derive(Clone)]
@@ -80,7 +80,8 @@ async fn schedule_task_at_midnight(pool: Arc<PgPool>) {
             .unwrap();
 
         let duration_until_midnight = next_midnight.signed_duration_since(now.naive_local());
-        let sleep_duration = tokio::time::Duration::from_secs(duration_until_midnight.num_seconds() as u64);
+        let sleep_duration =
+            tokio::time::Duration::from_secs(duration_until_midnight.num_seconds() as u64);
 
         sleep_until(Instant::now() + sleep_duration).await;
         scheduled_task(pool.clone()).await;

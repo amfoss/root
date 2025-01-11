@@ -4,13 +4,13 @@ use sqlx::PgPool;
 use std::sync::Arc;
 
 use crate::{
-    db::{
-        leaderboard::{CodeforcesStats, LeetCodeStats},
-        member::Member,
-    },
     leaderboard::{
         fetch_stats::{fetch_codeforces_stats, fetch_leetcode_stats},
         update_leaderboard::update_leaderboard,
+    },
+    models::{
+        leaderboard::{CodeforcesStats, LeetCodeStats},
+        member::Member,
     },
 };
 //Scheduled task for moving all members to Attendance table at midnight.

@@ -18,6 +18,5 @@ pub struct StatusUpdateStreakInfo {
 /// This struct is used to deserialize the input recieved for mutations on StatusUpdateStreak.
 #[derive(InputObject)]
 pub struct StreakInput {
-    pub member_id: Option<i32>,
-    pub discord_id: Option<String>,
+    pub member_id: i32,
 }

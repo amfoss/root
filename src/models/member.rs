@@ -33,7 +33,7 @@ pub struct CreateMemberInput {
     pub roll_no: String,
     pub name: String,
     pub email: String,
-    pub sex: String,
+    pub sex: Sex,
     pub year: i32,
     pub hostel: String,
     pub mac_address: String,

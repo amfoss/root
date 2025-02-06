@@ -5,7 +5,7 @@ name: Create and publish Docker image to GHCR
 on:
   workflow_dispatch:
   push:
-    branches: ['master']
+    branches: ['main']
 
 jobs:
   build-and-push-image:
@@ -38,7 +38,7 @@ jobs:
           images: ghcr.io/amfoss/root
           tags: |
             # set latest tag for master branch
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }},priority=2000
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }},priority=2000
             type=schedule,pattern={{date 'YYYYMMDD'}}
             type=ref,event=tag
             type=ref,event=pr

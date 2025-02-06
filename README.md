@@ -33,6 +33,14 @@ Root is our club's backend, responsible for collecting and distributing data fro
 
 GraphQL playground should be available at `http://localhost:8000/graphiql` as long as it's in development mode.
 
+
+# Deployment
+The deployed instance can be accessed at [root.amfoss.in](https://root.amfoss.in).
+
+The `main` branch is exclusively meant for production use and commits which get merged into it will make their way into the deployed instance. Active development should occur on the `develop` branch and when sufficient stability has been achieved, they can be merged into `main`. This will kick off the deployment workflow. 
+
+Further implementation details can be found at [bedrock](https://github.com/amfoss/bedrock).
+
 # Documentation
 
 See the [documentation](docs/docs.md) for the API reference, database schema and other detailed documentation.  
@@ -43,9 +51,9 @@ See the [documentation](docs/docs.md) for the API reference, database schema and
 
 If you encounter a bug, please check existing issues first to avoid duplicates. If none exist, create a new issue with the following details:
 
-*  Title: Concise summary.
+* Title: Concise summary.
 * Description: A detailed description of the issue.
-*  Steps to Reproduce: If it's a bug, include steps to reproduce.
+* Steps to Reproduce: If it's a bug, include steps to reproduce.
 * Expected and Actual Behavior: Describe what you expected and what actually happened.
 
 ## Suggesting Features
@@ -62,6 +70,7 @@ If you'd like to fix a bug, add a feature, or improve code quality:
 
 * Check the open issues to avoid redundancy.
 * Open a draft PR if you'd like feedback on an ongoing contribution.
+* **Make sure to set the `develop` branch as your pull request target**, see [Deployment](#deployment)
 
 ## Coding Standards
 

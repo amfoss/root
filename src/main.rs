@@ -128,10 +128,15 @@ fn build_graphql_schema(
 
 /// Abstraction over making the CORSLayer.
 fn setup_cors() -> CorsLayer {
+    let origins: [HeaderValue; 2] = [
+        "127.0.0.1".parse().unwrap(),
+        "https://home.amfoss.in".parse().unwrap(),
+    ];
+
     CorsLayer::new()
         // Home should be the only website that accesses the API, bots and scripts do not trigger CORS AFAIK.
         // This lets us restrict who has access to what in the API on the Home frontend.
-        .allow_origin(HeaderValue::from_static("https://home.amfoss.in"))
+        .allow_origin(origins)
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
         .allow_headers(tower_http::cors::Any)
 }

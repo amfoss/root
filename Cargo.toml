@@ -9,7 +9,7 @@ async-graphql-axum = "7.0.6"
 axum = "0.7.3"
 chrono = "0.4.38"
 serde = { version = "1.0.188", features = ["derive"] }
-sqlx = { version = "0.7.1", features = ["chrono", "postgres", "runtime-tokio"] }
+sqlx = { version = "0.8.3", features = ["chrono", "postgres", "runtime-tokio"] }
 tokio = { version = "1.28.2", features = ["default", "macros", "rt-multi-thread"] }                       # For async tests
 hmac = "0.12.1"
 sha2 = "0.10.8"

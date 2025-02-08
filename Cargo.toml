@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-graphql = { version = "7.0.6", features = ["chrono"] }
+async-graphql = { version = "7.0.15", features = ["chrono"] }
 async-graphql-axum = "7.0.6"
 axum = "0.7.3"
 chrono = "0.4.38"

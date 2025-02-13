@@ -49,6 +49,26 @@ pub struct MarkAttendanceInput {
     pub hmac_signature: String,
 }
 
+#[derive(SimpleObject)]
+pub struct DailyCount {
+    pub date: String,
+    pub count: i32,
+}
+
+#[derive(SimpleObject)]
+pub struct MemberAttendanceSummary {
+    pub id: i32,
+    pub name: String,
+    pub present_days: i32,
+}
+
+#[derive(SimpleObject)]
+pub struct AttendanceReport {
+    pub daily_count: Vec<DailyCount>,
+    pub member_attendance: Vec<MemberAttendanceSummary>,
+    pub max_days: i32,
+}
+
 /// This struct combines attendance data with member name for queries that need both.
 /// It joins the Attendance table with Member to include the member's name.
 #[derive(SimpleObject, FromRow)]

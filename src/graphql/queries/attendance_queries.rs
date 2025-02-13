@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use std::sync::Arc;
 
 use crate::models::{
@@ -7,6 +8,11 @@ use crate::models::{
 use async_graphql::{Context, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;
+
+use crate::models::{
+    attendance::{Attendance, AttendanceReport, DailyCount, MemberAttendanceSummary},
+    member::Member,
+};
 
 /// Sub-query for the [`Attendance`] table. The queries are:
 /// * attendance - get a specific member's attendance details using their member_id, roll_no or discord_id, or by date for all members.
@@ -74,7 +80,7 @@ impl AttendanceQueries {
         ctx: &Context<'_>,
         start_date: String,
         end_date: String,
-    ) -> Result<AttendanceSummary> {
+    ) -> Result<AttendanceReport> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
         let start = NaiveDate::parse_from_str(&start_date, "%Y-%m-%d")
@@ -82,8 +88,8 @@ impl AttendanceQueries {
         let end = NaiveDate::parse_from_str(&end_date, "%Y-%m-%d")
             .map_err(|_| async_graphql::Error::new("Invalid end_date format. Use YYYY-MM-DD"))?;
 
-            let daily_count_query = sqlx::query!(
-                r#"
+        let daily_count_query = sqlx::query!(
+            r#"
                 WITH date_series AS (
                     SELECT generate_series($1::date, $2::date, '1 day'::interval)::date AS date
                 )
@@ -96,12 +102,12 @@ impl AttendanceQueries {
                 GROUP BY ds.date
                 ORDER BY ds.date
                 "#,
-                start,
-                end
-            )
-            .fetch_all(pool.as_ref())
-            .await?;
-            
+            start,
+            end
+        )
+        .fetch_all(pool.as_ref())
+        .await?;
+
         let daily_count = daily_count_query
             .into_iter()
             .map(|row| DailyCount {
@@ -110,7 +116,7 @@ impl AttendanceQueries {
             })
             .collect();
 
-            let member_attendance_query = sqlx::query!(
+        let member_attendance_query = sqlx::query!(
                 r#"
                 SELECT 
                     m.member_id as "id!",
@@ -125,7 +131,6 @@ impl AttendanceQueries {
             )
             .fetch_all(pool.as_ref())
             .await?;
-            
 
         let member_attendance = member_attendance_query
             .into_iter()
@@ -150,9 +155,9 @@ impl AttendanceQueries {
         .fetch_all(pool.as_ref())
         .await?;
 
-        let count:i32 = max_days.len() as i32;
+        let count: i32 = max_days.len() as i32;
 
-        Ok(AttendanceSummary {
+        Ok(AttendanceReport {
             daily_count,
             member_attendance,
             max_days: count,

@@ -86,8 +86,14 @@ impl AttendanceQueries {
             .map_err(|_| async_graphql::Error::new("Invalid start_date format. Use YYYY-MM-DD"))?;
         let end = NaiveDate::parse_from_str(&end_date, "%Y-%m-%d")
             .map_err(|_| async_graphql::Error::new("Invalid end_date format. Use YYYY-MM-DD"))?;
+        print!("{}", start);
+        if start > end {
+            return Err(async_graphql::Error::new(
+                "startDate cannot be greater than endDate.",
+            ));
+        }
 
-        let daily_count_query = sqlx::query!(
+        let daily_count_result = sqlx::query!(
             r#"
             WITH dates AS (
             SELECT generate_series($1::date, $2::date, '1 day') as day
@@ -101,17 +107,25 @@ impl AttendanceQueries {
             "#,
             start,
             end
-        );
+        )
+        .fetch_all(pool.as_ref())
+        .await;
 
-        let daily_count: Vec<DailyCount> = daily_count_query
-            .fetch_all(pool.as_ref())
-            .await?
-            .into_iter()
-            .map(|row| DailyCount {
-                date: row.date.unwrap_or_default().to_string(),
-                count: row.total_present.unwrap_or(0),
-            })
-            .collect();
+        let daily_count = match daily_count_result {
+            Ok(rows) => rows
+                .into_iter()
+                .map(|row| DailyCount {
+                    date: row.date.unwrap_or_default().to_string(),
+                    count: row.total_present.unwrap_or(0),
+                })
+                .collect(),
+            Err(e) => {
+                return Err(async_graphql::Error::new(format!(
+                    "Failed to fetch daily attendance: {}",
+                    e
+                )))
+            }
+        };
 
         let member_attendance_query = sqlx::query!(
             r#"
@@ -126,23 +140,40 @@ impl AttendanceQueries {
             "#
         )
         .fetch_all(pool.as_ref())
-        .await?;
+        .await;
 
-        let member_attendance = member_attendance_query
-            .into_iter()
-            .map(|row| MemberAttendanceSummary {
-                id: row.id,
-                name: row.name,
-                present_days: row.present_days as i64,
-            })
-            .collect();
+        let member_attendance = match member_attendance_query {
+            Ok(rows) => rows
+                .into_iter()
+                .map(|row| MemberAttendanceSummary {
+                    id: row.id,
+                    name: row.name,
+                    present_days: row.present_days as i64,
+                })
+                .collect(),
+            Err(e) => {
+                return Err(async_graphql::Error::new(format!(
+                    "Failed to fetch member attendance summary: {}",
+                    e
+                )))
+            }
+        };
 
-        let max_days = sqlx::query_scalar::<_, i64>(
+        let max_days = match sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(DISTINCT date) FROM Attendance 
             WHERE date >= CURRENT_DATE - INTERVAL '6 months' AND is_present",
         )
         .fetch_one(pool.as_ref())
-        .await?;
+        .await
+        {
+            Ok(count) => count,
+            Err(e) => {
+                return Err(async_graphql::Error::new(format!(
+                    "Failed to fetch max days: {}",
+                    e
+                )))
+            }
+        };
 
         Ok(AttendanceReport {
             daily_count,

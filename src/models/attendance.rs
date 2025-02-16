@@ -52,21 +52,21 @@ pub struct MarkAttendanceInput {
 #[derive(SimpleObject)]
 pub struct DailyCount {
     pub date: String,
-    pub count: i32,
+    pub count: i64,
 }
 
 #[derive(SimpleObject)]
 pub struct MemberAttendanceSummary {
     pub id: i32,
     pub name: String,
-    pub present_days: i32,
+    pub present_days: i64,
 }
 
 #[derive(SimpleObject)]
 pub struct AttendanceReport {
     pub daily_count: Vec<DailyCount>,
     pub member_attendance: Vec<MemberAttendanceSummary>,
-    pub max_days: i32,
+    pub max_days: i64,
 }
 
 /// This struct combines attendance data with member name for queries that need both.

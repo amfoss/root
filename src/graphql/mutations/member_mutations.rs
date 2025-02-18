@@ -24,7 +24,7 @@ impl MemberMutations {
         .bind(&input.roll_no)
         .bind(&input.name)
         .bind(&input.email)
-        .bind(&input.sex)
+        .bind(input.sex)
         .bind(input.year)
         .bind(&input.hostel)
         .bind(&input.mac_address)

@@ -10,6 +10,11 @@ pub struct Attendance {
     pub is_present: bool,
     pub time_in: Option<NaiveTime>,
     pub time_out: Option<NaiveTime>,
+
+    //optional for attendance report
+    pub name: Option<String>,
+    pub year: Option<i32>,
+
     #[graphql(skip)] // Don't expose internal fields/meta-data
     pub created_at: NaiveDateTime,
     #[graphql(skip)]
@@ -47,4 +52,24 @@ pub struct MarkAttendanceInput {
     pub member_id: i32,
     pub date: NaiveDate,
     pub hmac_signature: String,
+}
+
+#[derive(SimpleObject)]
+pub struct DailyCount {
+    pub date: String,
+    pub count: i64,
+}
+
+#[derive(SimpleObject)]
+pub struct MemberAttendanceSummary {
+    pub id: i32,
+    pub name: String,
+    pub present_days: i64,
+}
+
+#[derive(SimpleObject)]
+pub struct AttendanceReport {
+    pub daily_count: Vec<DailyCount>,
+    pub member_attendance: Vec<MemberAttendanceSummary>,
+    pub max_days: i64,
 }

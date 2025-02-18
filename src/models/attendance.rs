@@ -10,6 +10,11 @@ pub struct Attendance {
     pub is_present: bool,
     pub time_in: Option<NaiveTime>,
     pub time_out: Option<NaiveTime>,
+
+    //optional for attendance report
+    pub name: Option<String>,
+    pub year: Option<i32>,
+
     #[graphql(skip)] // Don't expose internal fields/meta-data
     pub created_at: NaiveDateTime,
     #[graphql(skip)]

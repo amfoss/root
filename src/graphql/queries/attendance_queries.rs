@@ -27,8 +27,27 @@ impl AttendanceQueries {
         member_id: Option<i32>,
         roll_no: Option<String>,
         discord_id: Option<String>,
+        date: Option<String>,
     ) -> Result<Vec<Attendance>> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
+
+        if let Some(d) = &date {
+            let query = "
+                SELECT 
+                    A.*, 
+                    M.name, 
+                    M.year
+                FROM Attendance A
+                JOIN Member M ON A.member_id = M.member_id
+                WHERE A.date = $1::DATE";
+
+            let attendance_query = sqlx::query_as::<_, Attendance>(query)
+                .bind(d)
+                .fetch_all(pool.as_ref())
+                .await?;
+
+            return Ok(attendance_query);
+        }
 
         if let Some(id) = member_id {
             let attendance_query =
@@ -95,15 +114,13 @@ impl AttendanceQueries {
 
         let daily_count_result = sqlx::query!(
             r#"
-            WITH dates AS (
-            SELECT generate_series($1::date, $2::date, '1 day') as day
-            )
-            SELECT dates.day as date,
-                COUNT(a.member_id) as total_present
-            FROM dates
-            LEFT JOIN Attendance a ON dates.day = a.date AND a.is_present = true
-            GROUP BY dates.day
-            ORDER BY dates.day
+           SELECT 
+            a.date,
+            COUNT(CASE WHEN a.is_present = true THEN a.member_id END) as total_present
+            FROM Attendance a
+            WHERE  a.date BETWEEN $1 AND $2
+            GROUP BY a.date
+            ORDER BY a.date
             "#,
             start,
             end
@@ -115,7 +132,7 @@ impl AttendanceQueries {
             Ok(rows) => rows
                 .into_iter()
                 .map(|row| DailyCount {
-                    date: row.date.unwrap_or_default().to_string(),
+                    date: row.date.to_string(),
                     count: row.total_present.unwrap_or(0),
                 })
                 .collect(),

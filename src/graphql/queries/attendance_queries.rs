@@ -1,12 +1,15 @@
 use std::sync::Arc;
 
+use crate::models::{
+    attendance::{Attendance, AttendanceWithMember},
+    member::Member,
+};
 use async_graphql::{Context, Object, Result};
+use chrono::NaiveDate;
 use sqlx::PgPool;
 
-use crate::models::{attendance::Attendance, member::Member};
-
 /// Sub-query for the [`Attendance`] table. The queries are:
-/// * attendance - get a specific member's attendance details using their member_id, roll_no or discord_id
+/// * attendance - get a specific member's attendance details using their member_id, roll_no or discord_id, or by date for all members.
 #[derive(Default)]
 pub struct AttendanceQueries;
 
@@ -65,5 +68,27 @@ impl AttendanceQueries {
                 .await?;
 
         Ok(attendance_query)
+    }
+
+    // Query to get attendance by date
+    async fn attendance_by_date(
+        &self,
+        ctx: &Context<'_>,
+        date: NaiveDate,
+    ) -> Result<Vec<AttendanceWithMember>> {
+        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
+
+        let records = sqlx::query_as::<_, AttendanceWithMember>(
+            "SELECT a.attendance_id, a.member_id, a.date, a.is_present, 
+                    a.time_in, a.time_out, m.name, m.year
+             FROM Attendance a
+             JOIN Member m ON a.member_id = m.member_id
+             WHERE a.date = $1",
+        )
+        .bind(date)
+        .fetch_all(pool.as_ref())
+        .await?;
+
+        Ok(records)
     }
 }

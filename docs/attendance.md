@@ -32,6 +32,38 @@ struct AttendanceSummary {
 
 ## Queries
 
+### Get Attendance
+Retrieve attendance records by member ID or date.
+
+```graphql
+# Get attendance by member ID
+query {
+    attendance(memberId: 1) {
+        attendanceId
+        date
+        isPresent
+        timeIn
+        timeOut
+    }
+}
+```
+
+Get all attendance for a specific date
+
+```graphql
+query {
+    attendanceByDate(date: "2025-02-27") {
+        attendanceId
+        memberId
+        name
+        year
+        isPresent
+        timeIn
+        timeOut
+    }
+}
+```
+
 ### Mark Attendance
 Record a member's attendance for the day.
 

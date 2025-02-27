@@ -48,3 +48,17 @@ pub struct MarkAttendanceInput {
     pub date: NaiveDate,
     pub hmac_signature: String,
 }
+
+/// This struct combines attendance data with member name for queries that need both.
+/// It joins the Attendance table with Member to include the member's name.
+#[derive(SimpleObject, FromRow)]
+pub struct AttendanceWithMember {
+    pub attendance_id: i32,
+    pub member_id: i32,
+    pub date: NaiveDate,
+    pub is_present: bool,
+    pub time_in: Option<NaiveTime>,
+    pub time_out: Option<NaiveTime>,
+    pub name: String,
+    pub year: i32,
+}

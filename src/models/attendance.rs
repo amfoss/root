@@ -11,10 +11,6 @@ pub struct Attendance {
     pub time_in: Option<NaiveTime>,
     pub time_out: Option<NaiveTime>,
 
-    //optional for attendance report
-    pub name: Option<String>,
-    pub year: Option<i32>,
-
     #[graphql(skip)] // Don't expose internal fields/meta-data
     pub created_at: NaiveDateTime,
     #[graphql(skip)]
@@ -46,7 +42,7 @@ pub struct AttendanceSummaryInfo {
     pub days_attended: i32,
 }
 
-/// This struct is used to deserialize the input recieved for mutations on attendance.
+/// This struct is used to deserialize the input received for mutations on attendance.
 #[derive(InputObject)]
 pub struct MarkAttendanceInput {
     pub member_id: i32,
@@ -54,12 +50,14 @@ pub struct MarkAttendanceInput {
     pub hmac_signature: String,
 }
 
+// This struct is used to get the Lab count of a date
 #[derive(SimpleObject)]
 pub struct DailyCount {
     pub date: String,
     pub count: i64,
 }
 
+// This struct is used to fetch the attended lab of each member
 #[derive(SimpleObject)]
 pub struct MemberAttendanceSummary {
     pub id: i32,
@@ -67,6 +65,7 @@ pub struct MemberAttendanceSummary {
     pub present_days: i64,
 }
 
+// This struct is used for getting the combined Attendance report
 #[derive(SimpleObject)]
 pub struct AttendanceReport {
     pub daily_count: Vec<DailyCount>,

@@ -30,6 +30,35 @@ struct AttendanceSummary {
 }
 ```
 
+### Daily Count
+Total Lab count for each date
+```rust
+pub struct DailyCount {
+    pub date: String,
+    pub count: i64,
+}
+```
+
+### Member Summary
+Total lab members attended in the past 6 months
+```rust
+pub struct MemberAttendanceSummary {
+    pub id: i32,
+    pub name: String,
+    pub present_days: i64,
+}
+```
+
+### Attendance Report
+Attendance report of the club members
+```rust
+pub struct AttendanceReport {
+    pub daily_count: Vec<DailyCount>,
+    pub member_attendance: Vec<MemberAttendanceSummary>,
+    pub max_days: i64,
+}
+```
+
 ## Queries
 
 ### Get Attendance
@@ -97,6 +126,26 @@ query {
     }
 }
 ```
+
+### Get Attendance Report
+Get Attendance report containing lab count and members attendance report of the past 6 months.
+`maxDays returns the count of days when lab was open in the past 6 months`
+```graphql
+query{
+  getAttendanceSummary(startDate:"2024-12-20", endDate: "2024-12-27"){
+    memberAttendance{
+      name,
+      presentDays
+    }
+    dailyCount{
+      date,
+      count
+    }
+    maxDays
+  }
+}
+```
+
 
 ## Daily Task
 

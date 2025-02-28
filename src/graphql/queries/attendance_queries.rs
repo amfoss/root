@@ -93,12 +93,12 @@ impl AttendanceQueries {
         let daily_count_result = sqlx::query!(
             r#"
            SELECT 
-            a.date,
-            COUNT(CASE WHEN a.is_present = true THEN a.member_id END) as total_present
-            FROM Attendance a
-            WHERE  a.date BETWEEN $1 AND $2
-            GROUP BY a.date
-            ORDER BY a.date
+            attendace.date,
+            COUNT(CASE WHEN attendace.is_present = true THEN attendace.member_id END) as total_present
+            FROM Attendance attendace
+            WHERE  attendace.date BETWEEN $1 AND $2
+            GROUP BY attendace.date
+            ORDER BY attendace.date
             "#,
             start,
             end
@@ -118,14 +118,14 @@ impl AttendanceQueries {
 
         let member_attendance_query = sqlx::query!(
             r#"
-            SELECT m.member_id as "id!", m.name as "name!",
-                COUNT(a.is_present)::int as "present_days!"
-            FROM Member m
-            LEFT JOIN Attendance a 
-                ON m.member_id = a.member_id 
-                AND a.is_present AND a.date >= CURRENT_DATE - INTERVAL '6 months'
-            GROUP BY m.member_id, m.name
-            ORDER BY m.member_id
+            SELECT member.member_id as "id!", member.name as "name!",
+                COUNT(attendance.is_present)::int as "present_days!"
+            FROM Member member
+            LEFT JOIN Attendance attendance
+                ON member.member_id = attendance.member_id
+                AND attendance.is_present AND attendance.date >= CURRENT_DATE - INTERVAL '6 months'
+            GROUP BY member.member_id, member.name
+            ORDER BY member.member_id
             "#
         )
         .fetch_all(pool.as_ref())
@@ -163,11 +163,11 @@ impl AttendanceQueries {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
         let records = sqlx::query_as::<_, AttendanceWithMember>(
-            "SELECT a.attendance_id, a.member_id, a.date, a.is_present, 
-                    a.time_in, a.time_out, m.name, m.year
-             FROM Attendance a
-             JOIN Member m ON a.member_id = m.member_id
-             WHERE a.date = $1",
+            "SELECT attendance.attendance_id, attendance.member_id, attendance.date, attendance.is_present,
+                    attendance.time_in, attendance.time_out, member.name, member.year
+             FROM Attendance attendance
+             JOIN Member member ON attendance.member_id = member.member_id
+             WHERE attendance.date = $1",
         )
         .bind(date)
         .fetch_all(pool.as_ref())

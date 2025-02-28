@@ -6,13 +6,9 @@ use crate::models::{
     member::Member,
 };
 use async_graphql::{Context, Object, Result};
-use chrono::NaiveDate;
 use sqlx::PgPool;
 
-use crate::models::{
-    attendance::{Attendance, AttendanceReport, DailyCount, MemberAttendanceSummary},
-    member::Member,
-};
+use crate::models::attendance::{AttendanceReport, DailyCount, MemberAttendanceSummary};
 
 /// Sub-query for the [`Attendance`] table. The queries are:
 /// * attendance - get a specific member's attendance details using their member_id, roll_no or discord_id, or by date for all members.

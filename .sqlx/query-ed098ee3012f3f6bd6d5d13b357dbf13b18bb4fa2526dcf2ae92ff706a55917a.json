@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT member.member_id as \"id!\", member.name as \"name!\",\n                COUNT(attendance.is_present)::int as \"present_days!\"\n            FROM Member member\n            LEFT JOIN Attendance attendance\n                ON member.member_id = attendance.member_id\n                AND attendance.is_present AND attendance.date >= CURRENT_DATE - INTERVAL '6 months'\n            GROUP BY member.member_id, member.name\n            ORDER BY member.member_id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "present_days!",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "ed098ee3012f3f6bd6d5d13b357dbf13b18bb4fa2526dcf2ae92ff706a55917a"
+}

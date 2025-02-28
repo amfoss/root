@@ -9,7 +9,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: "postgresql://fake:fakepassword@fake.host:5555/fake_db"
+      SQLX_OFFLINE: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

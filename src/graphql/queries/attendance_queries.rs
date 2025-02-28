@@ -140,26 +140,17 @@ impl AttendanceQueries {
             })
             .collect();
 
-        let max_days = match sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(DISTINCT date) FROM Attendance 
-            WHERE date >= CURRENT_DATE - INTERVAL '6 months' AND is_present",
+        let max_days = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(DISTINCT date) FROM Attendance
+        WHERE date >= CURRENT_DATE - INTERVAL '6 months' AND is_present",
         )
         .fetch_one(pool.as_ref())
-        .await
-        {
-            Ok(count) => count,
-            Err(e) => {
-                return Err(async_graphql::Error::new(format!(
-                    "Failed to fetch max days: {}",
-                    e
-                )))
-            }
-        };
+        .await?;
 
         Ok(AttendanceReport {
             daily_count,
             member_attendance,
-            max_days: max_days as i64,
+            max_days,
         })
     }
 

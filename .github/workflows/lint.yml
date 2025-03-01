@@ -8,6 +8,8 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "sqlite::memory:"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

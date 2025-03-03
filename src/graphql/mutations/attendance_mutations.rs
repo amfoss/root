@@ -44,15 +44,17 @@ impl AttendanceMutations {
 
         let now = Local::now().with_timezone(&Kolkata).time();
         let attendance = sqlx::query_as::<_, Attendance>(
-            "INSERT INTO Attendance (member_id, date, is_present, time_in, time_out) 
-                VALUES ($1, $2, TRUE, $3, $3)
-                ON CONFLICT (member_id, date) DO UPDATE SET
-            time_out = $3
-            RETURNING *",
+            "UPDATE Attendance SET time_in = CASE 
+                WHEN time_in IS NULL THEN $1 
+                ELSE time_in END,
+             time_out = $1,
+             is_present = TRUE
+             WHERE member_id = $2 AND date = $3 RETURNING *
+            ",
         )
+        .bind(now)
         .bind(input.member_id)
         .bind(input.date)
-        .bind(now)
         .fetch_one(pool.as_ref())
         .await?;
 

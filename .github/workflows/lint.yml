@@ -8,8 +8,7 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: "postgresql://fake:fakepassword@fake.host:5555/fake_db"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

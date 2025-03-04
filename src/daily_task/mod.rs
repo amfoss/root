@@ -55,6 +55,7 @@ async fn execute_daily_task(pool: Arc<PgPool>) {
 // We need to add a record for every member because otherwise [`Presense`](https://www.github.com/presense) will only add present members to the DB, and we will have to JOIN Members and Attendance records for the day to get the absent members. In exchange for increased storage use, we get simpler queries for Home which needs the data for every member for every day so far. But as of Jan 2025, there are less than 50 members in the club and thus storage really shouldn't be an issue.
 /// Inserts new attendance records everyday for [`presense`](https://www.github.com/amfoss/presense) to update them later in the day and updates the AttendanceSummary table to keep track of monthly streaks.
 async fn update_attendance(members: Vec<Member>, pool: &PgPool) {
+    #[allow(deprecated)]
     let today = chrono::Utc::now().with_timezone(&Kolkata).date().naive_local();
     debug!("Updating attendance on {}", today);
 
@@ -96,6 +97,7 @@ async fn update_attendance(members: Vec<Member>, pool: &PgPool) {
 /// Checks if the member was present yesterday, and if so, increments the `days_attended` value. Otherwise, do nothing.
 async fn update_attendance_summary(member_id: i32, pool: &PgPool) {
     debug!("Updating summary for member #{}", member_id);
+    #[allow(deprecated)]
     let today = chrono::Utc::now().with_timezone(&Kolkata).date().naive_local();
     let yesterday = today - chrono::Duration::days(1);
 

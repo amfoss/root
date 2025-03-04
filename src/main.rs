@@ -1,6 +1,5 @@
 use async_graphql::EmptySubscription;
 use axum::http::{HeaderValue, Method};
-use chrono::FixedOffset;
 use sqlx::PgPool;
 use time::UtcOffset;
 use std::sync::Arc;

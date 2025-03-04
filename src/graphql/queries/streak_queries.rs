@@ -20,5 +20,13 @@ impl StreakQueries {
         .await?)
     }
 
+    async fn streaks(&self, ctx: &Context<'_>) -> Result<Vec<Streak>> {
+        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
+
+        Ok(
+            sqlx::query_as::<_, Streak>("SELECT * FROM StatusUpdateStreak")
+                .fetch_all(pool.as_ref())
+                .await?,
+        )
     }
 }

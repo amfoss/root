@@ -16,7 +16,8 @@ impl StreakMutations {
 
         let query = sqlx::query_as::<_, Streak>(
             "
-        INSERT INTO StatusUpdateStreak VALUES ($1, 1, 1) 
+        INSERT INTO StatusUpdateStreak (member_id, current_streak, max_streak)
+        VALUES ($1, 1, 1)
         ON CONFLICT (member_id) DO UPDATE SET 
             current_streak = StatusUpdateStreak.current_streak + 1, 
             max_streak = GREATEST(StatusUpdateStreak.max_streak, StatusUpdateStreak.current_streak + 1)
@@ -34,7 +35,8 @@ impl StreakMutations {
 
         let query = sqlx::query_as::<_, Streak>(
             "
-        INSERT INTO StatusUpdateStreak VALUES ($1, 0, 0) 
+        INSERT INTO StatusUpdateStreak (member_id, current_streak, max_streak)
+        VALUES ($1, 0, 0)
         ON CONFLICT (member_id) DO UPDATE
             SET current_streak = CASE
                 WHEN StatusUpdateStreak.current_streak > 0 THEN 0

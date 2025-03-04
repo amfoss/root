@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use crate::models::{
-    attendance::{Attendance, AttendanceWithMember},
-    member::Member,
-};
+use crate::models::attendance::{Attendance, AttendanceWithMember};
 use async_graphql::{Context, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;

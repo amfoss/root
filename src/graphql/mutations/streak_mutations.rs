@@ -19,7 +19,10 @@ impl StreakMutations {
         INSERT INTO StatusUpdateStreak (member_id, current_streak, max_streak)
         VALUES ($1, 1, 1)
         ON CONFLICT (member_id) DO UPDATE SET 
-            current_streak = StatusUpdateStreak.current_streak + 1, 
+            current_streak = CASE
+                WHEN StatusUpdateStreak.current_streak >= 0 THEN StatusUpdateStreak.current_streak + 1
+                ELSE 1
+            END,
             max_streak = GREATEST(StatusUpdateStreak.max_streak, StatusUpdateStreak.current_streak + 1)
         RETURNING *",
         )

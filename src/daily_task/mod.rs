@@ -155,9 +155,9 @@ async fn update_days_attended(member_id: i32, today: NaiveDate, pool: &PgPool) {
                 r#"
                     UPDATE AttendanceSummary
                     SET days_attended = days_attended + 1
-                    WHERE member_id = $2
-                    AND year = $3
-                    AND month = $4
+                    WHERE member_id = $1
+                    AND year = $2
+                    AND month = $3
                 "#,
             )
             .bind(member_id)
@@ -177,7 +177,7 @@ async fn update_days_attended(member_id: i32, today: NaiveDate, pool: &PgPool) {
             sqlx::query(
                 r#"
                     INSERT INTO AttendanceSummary (member_id, year, month, days_attended)
-                    VALUES ($1, $2, 1)
+                    VALUES ($1, $2, $3, 1)
                 "#,
             )
             .bind(member_id)

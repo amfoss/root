@@ -56,7 +56,10 @@ async fn execute_daily_task(pool: Arc<PgPool>) {
 /// Inserts new attendance records everyday for [`presense`](https://www.github.com/amfoss/presense) to update them later in the day and updates the AttendanceSummary table to keep track of monthly streaks.
 async fn update_attendance(members: Vec<Member>, pool: &PgPool) {
     #[allow(deprecated)]
-    let today = chrono::Utc::now().with_timezone(&Kolkata).date().naive_local();
+    let today = chrono::Utc::now()
+        .with_timezone(&Kolkata)
+        .date()
+        .naive_local();
     debug!("Updating attendance on {}", today);
 
     for member in members {
@@ -98,7 +101,10 @@ async fn update_attendance(members: Vec<Member>, pool: &PgPool) {
 async fn update_attendance_summary(member_id: i32, pool: &PgPool) {
     debug!("Updating summary for member #{}", member_id);
     #[allow(deprecated)]
-    let today = chrono::Utc::now().with_timezone(&Kolkata).date().naive_local();
+    let today = chrono::Utc::now()
+        .with_timezone(&Kolkata)
+        .date()
+        .naive_local();
     let yesterday = today - chrono::Duration::days(1);
 
     // Check if the member was present yesterday

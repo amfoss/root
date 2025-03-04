@@ -3,7 +3,10 @@ use sqlx::PgPool;
 use std::sync::Arc;
 
 use crate::models::{
-    attendance::{AttendanceInfo, AttendanceSummaryInfo}, member::Member, project::Project, status_update_streak::StatusUpdateStreakInfo
+    attendance::{AttendanceInfo, AttendanceSummaryInfo},
+    member::Member,
+    project::Project,
+    status_update_streak::StatusUpdateStreakInfo,
 };
 
 #[derive(Default)]
@@ -82,12 +85,10 @@ impl Member {
     async fn projects(&self, ctx: &Context<'_>) -> Vec<Project> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
-        sqlx::query_as::<_, Project>(
-            "SELECT project_id, title FROM Project WHERE member_id = $1",
-        )
-        .bind(self.member_id)
-        .fetch_all(pool.as_ref())
-        .await
-        .unwrap_or_default()
+        sqlx::query_as::<_, Project>("SELECT project_id, title FROM Project WHERE member_id = $1")
+            .bind(self.member_id)
+            .fetch_all(pool.as_ref())
+            .await
+            .unwrap_or_default()
     }
 }

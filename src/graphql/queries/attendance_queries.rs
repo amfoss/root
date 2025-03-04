@@ -74,11 +74,11 @@ impl AttendanceQueries {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
         let records = sqlx::query_as::<_, AttendanceWithMember>(
-            "SELECT a.attendance_id, a.member_id, a.date, a.is_present, 
-                    a.time_in, a.time_out, m.name, m.year
-             FROM Attendance a
-             JOIN Member m ON a.member_id = m.member_id
-             WHERE a.date = $1",
+            "SELECT att.attendance_id, att.member_id, att.date, att.is_present,
+                    att.time_in, att.time_out, mem.name, mem.year
+             FROM Attendance att
+             JOIN Member mem ON att.member_id = mem.member_id
+             WHERE att.date = $1",
         )
         .bind(date)
         .fetch_all(pool.as_ref())

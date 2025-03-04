@@ -11,7 +11,6 @@ pub struct ProjectMutations;
 #[Object]
 impl ProjectMutations {
     #[graphql(name = "setProject")]
-    // input is member_id
     async fn set_project(&self, ctx: &Context<'_>, input: SetProjectInput) -> Result<Project> {
         let pool = ctx
             .data::<Arc<PgPool>>()

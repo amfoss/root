@@ -9,7 +9,6 @@ use tower_http::cors::CorsLayer;
 
 use crate::graphql::{Mutation, Query};
 
-/// Setups the router with the given Schema and CORSLayer. Additionally, adds the GraphiQL playground if `is_dev` is true.
 pub fn setup_router(
     schema: Schema<Query, Mutation, EmptySubscription>,
     cors: CorsLayer,
@@ -20,7 +19,6 @@ pub fn setup_router(
         .layer(cors);
 
     if is_dev {
-        // Add GraphiQL playground only in development mode
         tracing::info!("GraphiQL playground enabled at /graphiql");
         router.route(
             "/graphiql",
@@ -31,7 +29,6 @@ pub fn setup_router(
     }
 }
 
-/// Returns the built-in GraphQL playground from async_graphql.
 async fn graphiql() -> impl IntoResponse {
     Html(
         GraphiQLSource::build()

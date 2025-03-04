@@ -4,8 +4,6 @@ use crate::models::project::Project;
 use async_graphql::{Context, Object, Result};
 use sqlx::PgPool;
 
-/// Sub-query for the [`Project`] table. The queries are:
-/// * projects - get all projects
 #[derive(Default)]
 pub struct ProjectQueries;
 

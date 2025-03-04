@@ -7,7 +7,6 @@ use tracing::{debug, error, info};
 
 use crate::models::member::Member;
 
-/// Continuously sleep till midnight, then run the 'execute_daily_task' function.
 pub async fn run_daily_task_at_midnight(pool: Arc<PgPool>) {
     loop {
         let now = chrono::Utc::now().with_timezone(&Kolkata);
@@ -45,15 +44,12 @@ async fn execute_daily_task(pool: Arc<PgPool>) {
         .await;
 
     match members {
-        // Add additional daily tasks such as leaderboard updates to the Ok(members) arm
         Ok(members) => update_attendance(members, &pool).await,
         // TODO: Handle this
         Err(e) => error!("Failed to fetch members: {:?}", e),
     };
 }
 
-// We need to add a record for every member because otherwise [`Presense`](https://www.github.com/presense) will only add present members to the DB, and we will have to JOIN Members and Attendance records for the day to get the absent members. In exchange for increased storage use, we get simpler queries for Home which needs the data for every member for every day so far. But as of Jan 2025, there are less than 50 members in the club and thus storage really shouldn't be an issue.
-/// Inserts new attendance records everyday for [`presense`](https://www.github.com/amfoss/presense) to update them later in the day and updates the AttendanceSummary table to keep track of monthly streaks.
 async fn update_attendance(members: Vec<Member>, pool: &PgPool) {
     #[allow(deprecated)]
     let today = chrono::Utc::now()
@@ -63,7 +59,6 @@ async fn update_attendance(members: Vec<Member>, pool: &PgPool) {
     debug!("Updating attendance on {}", today);
 
     for member in members {
-        // Insert blank rows for each member
         let attendance = sqlx::query(
             "INSERT INTO Attendance (member_id, date, is_present, time_in, time_out) 
                      VALUES ($1, $2, $3, $4, $5)
@@ -71,9 +66,9 @@ async fn update_attendance(members: Vec<Member>, pool: &PgPool) {
         )
         .bind(member.member_id)
         .bind(today)
-        .bind(false) // Default `is_present` is False
-        .bind(None::<NaiveTime>) // Default `time_in` is NULL
-        .bind(None::<NaiveTime>) // Default `time_out` is NULL
+        .bind(false)
+        .bind(None::<NaiveTime>)
+        .bind(None::<NaiveTime>)
         .execute(pool)
         .await;
 
@@ -97,7 +92,6 @@ async fn update_attendance(members: Vec<Member>, pool: &PgPool) {
     }
 }
 
-/// Checks if the member was present yesterday, and if so, increments the `days_attended` value. Otherwise, do nothing.
 async fn update_attendance_summary(member_id: i32, pool: &PgPool) {
     debug!("Updating summary for member #{}", member_id);
     #[allow(deprecated)]
@@ -107,7 +101,6 @@ async fn update_attendance_summary(member_id: i32, pool: &PgPool) {
         .naive_local();
     let yesterday = today - chrono::Duration::days(1);
 
-    // Check if the member was present yesterday
     let was_present_yesterday = sqlx::query_scalar::<_, bool>(
         r#"
             SELECT is_present 
@@ -121,11 +114,9 @@ async fn update_attendance_summary(member_id: i32, pool: &PgPool) {
     .await;
 
     match was_present_yesterday {
-        // Member was present yesterday, update the summary
         Ok(true) => {
             update_days_attended(member_id, today, pool).await;
         }
-        // Member was absent
         Ok(false) => {
             debug!(
                 "Member ID: {} was absent yesterday, days_attended remains the same.",
@@ -138,13 +129,11 @@ async fn update_attendance_summary(member_id: i32, pool: &PgPool) {
     }
 }
 
-/// Increments the `days_attended` value for the given member in the given month.
 async fn update_days_attended(member_id: i32, today: NaiveDate, pool: &PgPool) {
     // Convert year and month into i32 cause SQLx cannot encode u32 into database types
     let month: i32 = (today.month0() + 1) as i32;
     let year: i32 = today.year_ce().1 as i32;
 
-    // Check if there's an existing summary for the current month
     let existing_days_attended = sqlx::query_scalar::<_, i32>(
         r#"
             SELECT days_attended
@@ -184,7 +173,6 @@ async fn update_days_attended(member_id: i32, today: NaiveDate, pool: &PgPool) {
                 days_attended + 1
             );
         }
-        // No summary exists for this month, create a new one
         Ok(None) => {
             sqlx::query(
                 r#"

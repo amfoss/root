@@ -4,8 +4,6 @@ use crate::models::{member::Member, status_update_streak::StatusUpdateStreak as 
 use async_graphql::{Context, Object, Result};
 use sqlx::PgPool;
 
-/// Sub-query for the [`Streak`] table. The queries are:
-/// * streak - get a specific member's attendance details using their member_id, roll_no or discord_id
 #[derive(Default)]
 pub struct StreakQueries;
 
@@ -20,7 +18,6 @@ impl StreakQueries {
     ) -> Result<Streak> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
-        // member_id is given, simple query
         if let Some(id) = member_id {
             let streak_query = sqlx::query_as::<_, Streak>(
                 "SELECT current_streak, max_streak FROM StatusUpdateStreak WHERE member_id = $1",
@@ -32,7 +29,6 @@ impl StreakQueries {
             return Ok(streak_query);
         }
 
-        // Get the member using their roll_no or discord_id
         let member_query = if let Some(roll) = roll_no {
             sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE roll_no = $1")
                 .bind(roll)

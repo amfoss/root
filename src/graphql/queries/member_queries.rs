@@ -8,9 +8,6 @@ use crate::models::{
     status_update_streak::StatusUpdateStreakInfo,
 };
 
-/// Sub-query for the [`Member`] table. The queries are:
-/// * members - get list of all members and their details, optionally filtered by year and id
-/// * member - get a specific member's details using their id, roll_no or discord_id
 #[derive(Default)]
 pub struct MemberQueries;
 
@@ -25,10 +22,8 @@ impl MemberQueries {
     ) -> Result<Member> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
-        // Base SQL query
         let mut sql = String::from("SELECT * FROM Member WHERE ");
 
-        // Push filter
         let query = if let Some(id) = member_id {
             sql.push_str("member_id = $1");
             sqlx::query_as::<_, Member>(&sql).bind(id)
@@ -56,10 +51,8 @@ impl MemberQueries {
     ) -> Result<Vec<Member>> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
-        // Base standalone query
         let mut query = sqlx::QueryBuilder::new("SELECT * FROM Member WHERE 1=1");
 
-        // Push filters if necessary
         if let Some(y) = year {
             query.push(" AND year = ");
             query.push_bind(y);
@@ -79,11 +72,6 @@ impl MemberQueries {
     }
 }
 
-/// These are resolvers to handle nested queries i.e if the end-user wants details of members held in other tables. Currently you can query the following for each Member:
-/// * date, is_present, time_in and time_out fields of [`Attendance`]
-/// * year, month and days_attendned fields of [`AttendanceSummary`]
-/// * current_streak and max_streak fields of [`StatusUpdateStreak`]
-/// Resolvers can be easily changed to show more fields by editing the SQLx query in their respective methods.
 #[ComplexObject]
 impl Member {
     async fn attendance(&self, ctx: &Context<'_>) -> Vec<AttendanceInfo> {

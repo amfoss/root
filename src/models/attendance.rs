@@ -24,7 +24,6 @@ pub struct AttendanceSummary {
     pub days_attended: i32,
 }
 
-/// This struct is used in place of [`Attendance`] in nested queries to avoid overfetching.
 #[derive(SimpleObject, FromRow)]
 pub struct AttendanceInfo {
     pub date: NaiveDate,
@@ -33,7 +32,6 @@ pub struct AttendanceInfo {
     pub time_out: Option<NaiveTime>,
 }
 
-/// This struct is used in place of [`AttendanceSummary`] in nested queries to avoid overfetching.
 #[derive(SimpleObject, FromRow)]
 pub struct AttendanceSummaryInfo {
     pub year: i32,
@@ -41,7 +39,6 @@ pub struct AttendanceSummaryInfo {
     pub days_attended: i32,
 }
 
-/// This struct is used to deserialize the input recieved for mutations on attendance.
 #[derive(InputObject)]
 pub struct MarkAttendanceInput {
     pub member_id: i32,
@@ -49,8 +46,6 @@ pub struct MarkAttendanceInput {
     pub hmac_signature: String,
 }
 
-/// This struct combines attendance data with member name for queries that need both.
-/// It joins the Attendance table with Member to include the member's name.
 #[derive(SimpleObject, FromRow)]
 pub struct AttendanceWithMember {
     pub attendance_id: i32,

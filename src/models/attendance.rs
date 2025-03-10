@@ -56,4 +56,5 @@ pub struct AttendanceWithMember {
     pub time_out: Option<NaiveTime>,
     pub name: String,
     pub year: i32,
+    pub group_id: i32,
 }

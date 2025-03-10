@@ -30,7 +30,7 @@ impl AttendanceQueries {
 
         let records = sqlx::query_as::<_, AttendanceWithMember>(
             "SELECT att.attendance_id, att.member_id, att.date, att.is_present,
-                    att.time_in, att.time_out, mem.name, mem.year
+                    att.time_in, att.time_out, mem.name, mem.year, mem.group_id
              FROM Attendance att
              JOIN Member mem ON att.member_id = mem.member_id
              WHERE att.date = $1",

@@ -10,7 +10,7 @@ axum = "0.8.1"
 chrono = { version = "0.4.38", features = ["clock"] }
 serde = { version = "1.0.188", features = ["derive"] }
 sqlx = { version = "0.8.3", features = ["chrono", "postgres", "runtime-tokio"] }
-tokio = { version = "1.28.2", features = ["default", "macros", "rt-multi-thread"] }                       # For async tests
+tokio = { version = "1.44.1", features = ["default", "macros", "rt-multi-thread"] }                       # For async tests
 hmac = "0.12.1"
 sha2 = "0.10.8"
 hex = "0.4.3"

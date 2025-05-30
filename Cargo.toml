@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 async-graphql = { version = "7.0.15", features = ["chrono"] }
-async-graphql-axum = "7.0.6"
+async-graphql-axum = "7.0.17"
 axum = "0.8.1"
 chrono = { version = "0.4.38", features = ["clock"] }
 serde = { version = "1.0.188", features = ["derive"] }

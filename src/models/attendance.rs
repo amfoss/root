@@ -58,3 +58,5 @@ pub struct AttendanceWithMember {
     pub year: i32,
     pub group_id: i32,
 }
+
+

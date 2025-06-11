@@ -16,6 +16,9 @@ pub mod graphql;
 pub mod models;
 pub mod routes;
 
+use dotenv::dotenv;
+
+
 /// Handles all over environment variables in one place.
 // TODO: Replace with `Config.rs` crate.
 struct Config {
@@ -39,6 +42,11 @@ impl Config {
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
+    // Fetch the DATABASE_URL env var
+    
+
     let config = Config::from_env();
     setup_tracing(&config.env);
 
@@ -53,7 +61,7 @@ async fn main() {
     let router = setup_router(schema, cors, config.env == "development");
 
     info!("Starting Root...");
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port))
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}",config.port))
         .await
         .unwrap();
     axum::serve(listener, router).await.unwrap();

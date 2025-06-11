@@ -41,4 +41,6 @@ impl AttendanceQueries {
 
         Ok(records)
     }
+
+    
 }

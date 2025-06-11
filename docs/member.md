@@ -17,6 +17,7 @@ struct Member {
     mac_address: String,
     discord_id: String,
     group_id: i32,
+    track: String,
 }
 ```
 
@@ -53,6 +54,7 @@ mutation {
             macAddress: "XX:XX:XX:XX:XX:XX"
             discordId: "123456789"
             groupId: 1
+            track: "web"
         }
     ) {
         memberId

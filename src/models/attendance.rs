@@ -57,4 +57,5 @@ pub struct AttendanceWithMember {
     pub name: String,
     pub year: i32,
     pub group_id: i32,
+    pub track: String,
 }

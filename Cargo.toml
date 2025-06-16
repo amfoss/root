@@ -14,7 +14,7 @@ tokio = { version = "1.28.2", features = ["default", "macros", "rt-multi-thread"
 hmac = "0.12.1"
 sha2 = "0.10.8"
 hex = "0.4.3"
-tower-http = { version = "0.6.1", features = ["cors"] }
+tower-http = { version = "0.6.6", features = ["cors"] }
 tower = "0.5.1"
 chrono-tz = "0.10.1"
 serde_json = "1.0"

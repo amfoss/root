@@ -46,17 +46,6 @@ pub struct MarkAttendanceInput {
     pub hmac_signature: String,
 }
 
-#[derive(SimpleObject, FromRow)]
-pub struct AttendanceWithMember {
-    pub attendance_id: i32,
-    pub member_id: i32,
-    pub date: NaiveDate,
-    pub is_present: bool,
-    pub time_in: Option<NaiveTime>,
-    pub time_out: Option<NaiveTime>,
-    pub name: String,
-    pub year: i32,
-    pub group_id: i32,
-}
+
 
 

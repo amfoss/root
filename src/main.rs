@@ -41,12 +41,7 @@ impl Config {
 }
 
 #[tokio::main]
-async fn main() {
-    dotenv().ok();
-
-    // Fetch the DATABASE_URL env var
-    
-
+async fn main() {    
     let config = Config::from_env();
     setup_tracing(&config.env);
 

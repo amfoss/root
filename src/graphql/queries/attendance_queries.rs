@@ -1,12 +1,25 @@
-use std::sync::Arc;
-
-use crate::models::attendance::{Attendance, AttendanceWithMember};
-use async_graphql::{Context, Object, Result};
+use crate::models::attendance::Attendance;
+use crate::models::member::Member;
+use async_graphql::{ComplexObject, Context, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;
+use std::sync::Arc;
 
 #[derive(Default)]
 pub struct AttendanceQueries;
+
+#[ComplexObject]
+impl Attendance {
+    async fn member(&self, ctx: &Context<'_>) -> Result<Member> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+        let member = sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE member_id = $1")
+            .bind(self.member_id)
+            .fetch_one(pool.as_ref())
+            .await?;
+
+        Ok(member)
+    }
+}
 
 #[Object]
 impl AttendanceQueries {
@@ -25,22 +38,14 @@ impl AttendanceQueries {
         &self,
         ctx: &Context<'_>,
         date: NaiveDate,
-    ) -> Result<Vec<AttendanceWithMember>> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
+    ) -> Result<Vec<Attendance>> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
 
-        let records = sqlx::query_as::<_, AttendanceWithMember>(
-            "SELECT att.attendance_id, att.member_id, att.date, att.is_present,
-                    att.time_in, att.time_out, mem.name, mem.year, mem.group_id
-             FROM Attendance att
-             JOIN Member mem ON att.member_id = mem.member_id
-             WHERE att.date = $1",
-        )
-        .bind(date)
-        .fetch_all(pool.as_ref())
-        .await?;
+        let rows = sqlx::query_as::<_, Attendance>("SELECT * FROM Attendance WHERE date = $1")
+            .bind(date)
+            .fetch_all(pool.as_ref())
+            .await?;
 
-        Ok(records)
+        Ok(rows)
     }
-
-    
 }

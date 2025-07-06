@@ -16,7 +16,7 @@ pub mod graphql;
 pub mod models;
 pub mod routes;
 
-use dotenv::dotenv;
+
 
 
 /// Handles all over environment variables in one place.

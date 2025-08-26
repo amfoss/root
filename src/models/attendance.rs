@@ -3,11 +3,8 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use sqlx::FromRow;
 
 #[derive(SimpleObject, FromRow)]
-#[graphql(complex)]
 pub struct Attendance {
     pub attendance_id: i32,
-    #[graphql(skip)]
-    pub member_id: i32,
     pub date: NaiveDate,
     pub is_present: bool,
     pub time_in: Option<NaiveTime>,

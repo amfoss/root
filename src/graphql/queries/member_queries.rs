@@ -1,3 +1,4 @@
+use crate::models::attendance::Attendance;
 use async_graphql::{ComplexObject, Context, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;
@@ -69,6 +70,20 @@ impl Member {
             .await?;
 
         Ok(result)
+    }
+
+    async fn attendance_by_date(&self, ctx: &Context<'_>, date: NaiveDate) -> Result<Attendance> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+
+        let rows = sqlx::query_as::<_, Attendance>(
+            "SELECT * FROM Attendance WHERE date = $1 AND member_id=$2",
+        )
+        .bind(date)
+        .bind(self.member_id)
+        .fetch_one(pool.as_ref())
+        .await?;
+
+        Ok(rows)
     }
 
     async fn present_count_by_date(

@@ -3,12 +3,7 @@ use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::models::{
-    attendance::{AttendanceInfo, AttendanceSummaryInfo},
-    member::Member,
-    project::Project,
-    status_update::{StatusUpdateHistory, StatusUpdateStreakInfo},
-};
+use crate::models::{member::Member, status_update::StatusUpdateStreakInfo};
 
 #[derive(Default)]
 pub struct MemberQueries;
@@ -46,47 +41,6 @@ impl MemberQueries {
 
 #[ComplexObject]
 impl Member {
-    async fn attendance(&self, ctx: &Context<'_>) -> Vec<AttendanceInfo> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
-
-        sqlx::query_as::<_, AttendanceInfo>(
-            "SELECT date, is_present, time_in, time_out FROM Attendance WHERE member_id = $1",
-        )
-        .bind(self.member_id)
-        .fetch_all(pool.as_ref())
-        .await
-        .unwrap_or_default()
-    }
-
-    #[graphql(name = "attendanceSummary")]
-    async fn attendance_summary(&self, ctx: &Context<'_>) -> Vec<AttendanceSummaryInfo> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
-
-        sqlx::query_as::<_, AttendanceSummaryInfo>(
-            "SELECT
-                to_char(month_date, 'YYYY') AS year,
-                to_char(month_date, 'MM') AS month,
-                count(*) AS days_attended
-            FROM (
-                SELECT
-                    date_trunc('month', date) AS month_date,
-                    member_id
-                FROM
-                    attendance
-                WHERE
-                    is_present = TRUE
-                    AND member_id = $1
-            ) AS monthly_data
-            GROUP BY
-                month_date,
-                member_id;",
-        )
-        .bind(self.member_id)
-        .fetch_all(pool.as_ref())
-        .await
-        .unwrap_or_default()
-    }
-
     async fn streak(&self, ctx: &Context<'_>) -> Vec<StatusUpdateStreakInfo> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
@@ -97,16 +51,6 @@ impl Member {
         .fetch_all(pool.as_ref())
         .await
         .unwrap_or_default()
-    }
-
-    async fn projects(&self, ctx: &Context<'_>) -> Vec<Project> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
-
-        sqlx::query_as::<_, Project>("SELECT project_id, title FROM Project WHERE member_id = $1")
-            .bind(self.member_id)
-            .fetch_all(pool.as_ref())
-            .await
-            .unwrap_or_default()
     }
 
     async fn status_update_count_by_date(
@@ -125,19 +69,6 @@ impl Member {
             .await?;
 
         Ok(result)
-    }
-
-    async fn status_update_history(&self, ctx: &Context<'_>) -> Result<Vec<StatusUpdateHistory>> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
-
-        let history = sqlx::query_as::<_, StatusUpdateHistory>(
-            "SELECT * FROM StatusUpdateHistory WHERE member_id = $1 AND date BETWEEN (SELECT MAX(date) FROM StatusUpdateHistory WHERE member_id = $1) - INTERVAL '6 months' AND (SELECT MAX(date) FROM StatusUpdateHistory WHERE member_id = $1);"
-        )
-        .bind(self.member_id)
-        .fetch_all(pool.as_ref())
-        .await?;
-
-        Ok(history)
     }
 
     async fn present_count_by_date(

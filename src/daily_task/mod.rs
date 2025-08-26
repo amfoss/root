@@ -36,7 +36,6 @@ pub async fn run_daily_task_at_midnight(pool: Arc<PgPool>) {
 
 /// This function does a number of things, including:
 /// * Insert new attendance records everyday for [`presense`](https://www.github.com/amfoss/presense) to update them later in the day.
-/// * Update the AttendanceSummary table
 async fn execute_daily_task(pool: Arc<PgPool>) {
     // Members is queried outside of each function to avoid repetition
     let members = sqlx::query_as::<_, Member>("SELECT * FROM Member")
@@ -90,7 +89,6 @@ async fn update_attendance(members: &Vec<Member>, pool: &PgPool) {
             }
         }
         // This could have been called in `execute_daily_task()` but that would require us to loop through members twice.
-        // Whether or not inserting attendance failed, Root will attempt to update AttendanceSummary. This can potentially fail too since insertion failed earlier. However, these two do not depend on each other and one of them failing is no reason to avoid trying the other.
     }
 }
 

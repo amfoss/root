@@ -57,24 +57,6 @@ JOIN (
 WHERE (random() < 0.75)
 ON CONFLICT (member_id, date) DO NOTHING;
 
-
--- AttendanceSummary
-INSERT INTO AttendanceSummary (
-    member_id, year, month, days_attended
-)
-SELECT 
-    m.member_id,
-    2025,
-    (i % 12) + 1,
-    FLOOR(random() * 26 + 3)::INT
-FROM generate_series(1, 400) AS i
-JOIN (
-    SELECT generate_series(1, 60) AS idx, member_id
-    FROM member
-) AS m ON (i % 60) + 1 = m.idx
-ON CONFLICT (member_id, year, month) DO NOTHING;
-
-
 -- StatusUpdateStreak
 INSERT INTO StatusUpdateStreak (
     member_id, current_streak, max_streak

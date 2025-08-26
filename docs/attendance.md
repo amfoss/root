@@ -19,17 +19,6 @@ struct Attendance {
 ```
 The final two fields are not exposed in the interface for obvious reasons.
 
-### AttendanceSummary
-Monthly attendance summary for each member.
-```rust
-struct AttendanceSummary {
-    member_id: i32,
-    year: i32,
-    month: i32,
-    days_attended: i32,
-}
-```
-
 ## Queries
 
 ### Get Attendance
@@ -81,19 +70,6 @@ mutation {
         isPresent
         timeIn
         timeOut
-    }
-}
-```
-
-### Get Attendance Summary
-Get monthly attendance summary for a member.
-
-```graphql
-query {
-    attendanceSummary(memberId: 1) {
-        year
-        month
-        daysAttended
     }
 }
 ```

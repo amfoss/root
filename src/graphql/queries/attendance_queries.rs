@@ -23,17 +23,6 @@ impl Attendance {
 
 #[Object]
 impl AttendanceQueries {
-    async fn attendance(&self, ctx: &Context<'_>, member_id: i32) -> Result<Vec<Attendance>> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
-
-        Ok(
-            sqlx::query_as::<_, Attendance>("SELECT * FROM Attendance WHERE member_id = $1")
-                .bind(member_id)
-                .fetch_all(pool.as_ref())
-                .await?,
-        )
-    }
-
     async fn attendance_by_date(
         &self,
         ctx: &Context<'_>,

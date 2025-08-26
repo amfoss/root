@@ -18,29 +18,6 @@ pub struct Attendance {
     pub updated_at: NaiveDateTime,
 }
 
-#[derive(SimpleObject, FromRow)]
-pub struct AttendanceSummary {
-    pub member_id: i32,
-    pub year: i32,
-    pub month: i32,
-    pub days_attended: i32,
-}
-
-#[derive(SimpleObject, FromRow)]
-pub struct AttendanceInfo {
-    pub date: NaiveDate,
-    pub is_present: bool,
-    pub time_in: Option<NaiveTime>,
-    pub time_out: Option<NaiveTime>,
-}
-
-#[derive(SimpleObject, FromRow)]
-pub struct AttendanceSummaryInfo {
-    pub year: i32,
-    pub month: i32,
-    pub days_attended: i32,
-}
-
 #[derive(InputObject)]
 pub struct MarkAttendanceInput {
     pub member_id: i32,

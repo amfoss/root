@@ -1,3 +1,6 @@
+use crate::graphql::api::{
+    fetch_and_update_codeforces_stats, fetch_and_update_leetcode, update_leaderboard_scores,
+};
 use chrono::NaiveTime;
 use chrono_tz::Asia::Kolkata;
 use sqlx::PgPool;
@@ -5,7 +8,10 @@ use std::sync::Arc;
 use tokio::time::sleep_until;
 use tracing::{debug, error, info};
 
-use crate::models::member::Member;
+use crate::models::{
+    leaderboard::{CodeforcesStats, LeetCodeStats},
+    member::Member,
+};
 
 pub async fn run_daily_task_at_midnight(pool: Arc<PgPool>) {
     loop {
@@ -47,10 +53,66 @@ async fn execute_daily_task(pool: Arc<PgPool>) {
         Ok(members) => {
             update_attendance(&members, &pool).await;
             update_status_history(&members, &pool).await;
+            update_leaderboard_task(pool.clone()).await;
         }
         // TODO: Handle this
         Err(e) => error!("Failed to fetch members: {:?}", e),
     };
+}
+
+pub async fn update_leaderboard_task(pool: Arc<PgPool>) {
+    #[allow(deprecated)]
+    let today = chrono::Utc::now()
+        .with_timezone(&Kolkata)
+        .date()
+        .naive_local();
+    debug!("Updating leaderboard on {}", today);
+
+    let members: Result<Vec<Member>, sqlx::Error> =
+        sqlx::query_as::<_, Member>("SELECT * FROM Member")
+            .fetch_all(pool.as_ref())
+            .await;
+
+    match members {
+        Ok(members) => {
+            for member in &members {
+                // Update LeetCode stats
+                if let Ok(Some(leetcode_stats)) = sqlx::query_as::<_, LeetCodeStats>(
+                    "SELECT leetcode_username FROM leetcode_stats WHERE member_id = $1 AND leetcode_username IS NOT NULL AND leetcode_username != ''",
+                )
+                .bind(member.member_id)
+                .fetch_optional(pool.as_ref())
+                .await {
+                    let username = leetcode_stats.leetcode_username.clone();
+
+                    match fetch_and_update_leetcode(pool.clone(), member.member_id, &username).await {
+                        Ok(_) => debug!("LeetCode stats updated for member ID: {}", member.member_id),
+                        Err(e) => error!("Failed to update LeetCode stats for member ID {}: {:?}", member.member_id, e),
+                    }
+                }
+
+                if let Ok(Some(codeforces_stats)) = sqlx::query_as::<_, CodeforcesStats>(
+                    "SELECT codeforces_handle FROM codeforces_stats WHERE member_id = $1 AND codeforces_handle IS NOT NULL AND codeforces_handle != ''",
+                )
+                .bind(member.member_id)
+                .fetch_optional(pool.as_ref())
+                .await {
+                    let username = codeforces_stats.codeforces_handle.clone();
+
+                    match fetch_and_update_codeforces_stats(pool.clone(), member.member_id, &username).await {
+                        Ok(_) => debug!("Codeforces stats updated for member ID: {}", member.member_id),
+                        Err(e) => error!("Failed to update Codeforces stats for member ID {}: {:?}", member.member_id, e),
+                    }
+                }
+            }
+
+            match update_leaderboard_scores(pool.clone()).await {
+                Ok(_) => debug!("Leaderboard updated successfully."),
+                Err(e) => error!("Failed to update leaderboard: {e:?}"),
+            }
+        }
+        Err(e) => error!("Failed to fetch members: {e:?}"),
+    }
 }
 
 async fn update_attendance(members: &Vec<Member>, pool: &PgPool) {
@@ -104,7 +166,7 @@ async fn update_status_history(members: &Vec<Member>, pool: &PgPool) {
 
     for member in members {
         let status_update = sqlx::query(
-            "INSERT INTO StatusUpdateHistory (member_id, date, is_updated) 
+            "INSERT INTO StatusUpdateHistory (member_id, date, is_updated)
                      VALUES ($1, $2, $3)
                      ON CONFLICT (member_id, date) DO NOTHING",
         )

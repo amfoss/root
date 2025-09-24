@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO leaderboard (member_id, leetcode_score, codeforces_score, unified_score, last_updated)\n             VALUES ($1, $2, $3, $4, NOW())\n             ON CONFLICT (member_id) DO UPDATE SET\n                 leetcode_score = EXCLUDED.leetcode_score,\n                 codeforces_score = EXCLUDED.codeforces_score,\n                 unified_score = EXCLUDED.unified_score,\n                 last_updated = NOW()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8fe3e023fde759a78e0c4071f658cc4ed4cf29158360ce3f17b87b403dcf9f15"
+}

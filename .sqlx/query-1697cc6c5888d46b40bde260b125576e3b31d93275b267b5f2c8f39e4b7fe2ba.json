@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO leetcode_stats (\n            member_id, leetcode_username, problems_solved, easy_solved, medium_solved,\n            hard_solved, contests_participated, best_rank, total_contests\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        ON CONFLICT (member_id) DO UPDATE SET\n            leetcode_username = EXCLUDED.leetcode_username,\n            problems_solved = EXCLUDED.problems_solved,\n            easy_solved = EXCLUDED.easy_solved,\n            medium_solved = EXCLUDED.medium_solved,\n            hard_solved = EXCLUDED.hard_solved,\n            contests_participated = EXCLUDED.contests_participated,\n            best_rank = EXCLUDED.best_rank,\n            total_contests = EXCLUDED.total_contests\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1697cc6c5888d46b40bde260b125576e3b31d93275b267b5f2c8f39e4b7fe2ba"
+}

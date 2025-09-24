@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT member_id, problems_solved, easy_solved, medium_solved, hard_solved,\n                contests_participated, best_rank\n         FROM leetcode_stats",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "member_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "problems_solved",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "easy_solved",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "medium_solved",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "hard_solved",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "contests_participated",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "best_rank",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d1a8d44f4608a7ca73e7e96d88678b0afdd72f2b91332a47f7f41627230dd989"
+}

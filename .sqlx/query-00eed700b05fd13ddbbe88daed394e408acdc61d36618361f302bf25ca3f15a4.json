@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT member_id, codeforces_rating, max_rating, contests_participated\n         FROM codeforces_stats",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "member_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "codeforces_rating",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "max_rating",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "contests_participated",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "00eed700b05fd13ddbbe88daed394e408acdc61d36618361f302bf25ca3f15a4"
+}

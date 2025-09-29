@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use sqlx::FromRow;
 
 #[derive(SimpleObject, FromRow)]
-pub struct StatusUpdate {
+pub struct StatusUpdateRecord {
     pub update_id: i32,
     pub member_id: i32,
     pub date: NaiveDate,
@@ -11,7 +11,7 @@ pub struct StatusUpdate {
 }
 
 #[derive(SimpleObject, FromRow)]
-pub struct StatusUpdateStreak {
+pub struct StatusUpdateStreakRecord {
     pub current_streak: i64,
     pub max_streak: i64,
 }

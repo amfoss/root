@@ -3,7 +3,7 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use sqlx::FromRow;
 
 #[derive(SimpleObject, FromRow)]
-pub struct Attendance {
+pub struct AttendanceRecord {
     pub attendance_id: i32,
     pub date: NaiveDate,
     pub is_present: bool,

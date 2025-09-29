@@ -7,7 +7,7 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use sqlx::PgPool;
 
-use crate::models::attendance::{Attendance, MarkAttendanceInput};
+use crate::models::attendance::{AttendanceRecord, MarkAttendanceInput};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -21,7 +21,7 @@ impl AttendanceMutations {
         &self,
         ctx: &Context<'_>,
         input: MarkAttendanceInput,
-    ) -> Result<Attendance> {
+    ) -> Result<AttendanceRecord> {
         let pool = ctx
             .data::<Arc<PgPool>>()
             .expect("Pool not found in context");
@@ -43,7 +43,7 @@ impl AttendanceMutations {
         }
 
         let now = Local::now().with_timezone(&Kolkata).time();
-        let attendance = sqlx::query_as::<_, Attendance>(
+        let attendance = sqlx::query_as::<_, AttendanceRecord>(
             "UPDATE Attendance SET time_in = CASE 
                 WHEN time_in IS NULL THEN $1 
                 ELSE time_in END,

@@ -1,10 +1,10 @@
-use crate::models::attendance::Attendance;
+use crate::models::attendance::AttendanceRecord;
 use async_graphql::{ComplexObject, Context, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::models::{member::Member, status_update::StatusUpdateStreak};
+use crate::models::{member::Member, status_update::StatusUpdateStreakRecord};
 
 #[derive(Default)]
 pub struct MemberQueries;
@@ -19,7 +19,7 @@ pub struct AttendanceInfo {
 
 #[Object]
 impl MemberQueries {
-    pub async fn members(
+    pub async fn all_members(
         &self,
         ctx: &Context<'_>,
         year: Option<i32>,
@@ -79,14 +79,14 @@ impl MemberQueries {
 
 #[Object]
 impl StatusInfo {
-    async fn streak(&self, ctx: &Context<'_>) -> Result<StatusUpdateStreak> {
+    async fn streak(&self, ctx: &Context<'_>) -> Result<StatusUpdateStreakRecord> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
         // The below is based on the classic 'islands and gaps' problem, adapted to fit our needs.
         // The key idea used here is in the 'streaks' CTE: for consecutive dates (a streak), the difference
         // between the date value and its row number (rn) remains constant.
         // All rows with the same (date - rn) value therefore belong to the same streak.
-        let result = sqlx::query_as::<_, StatusUpdateStreak>(
+        let result = sqlx::query_as::<_, StatusUpdateStreakRecord>(
             "WITH numbered AS (
                 SELECT
                     date,
@@ -154,9 +154,9 @@ impl AttendanceInfo {
         ctx: &Context<'_>,
         start_date: NaiveDate,
         end_date: NaiveDate,
-    ) -> Result<Vec<Attendance>> {
+    ) -> Result<Vec<AttendanceRecord>> {
         let pool = ctx.data::<Arc<PgPool>>()?;
-        let rows = sqlx::query_as::<_, Attendance>("SELECT * FROM Attendance att INNER JOIN member m ON att.member_id = m.member_id where date BETWEEN $1 and $2 AND att.member_id=$3")
+        let rows = sqlx::query_as::<_, AttendanceRecord>("SELECT * FROM Attendance att INNER JOIN member m ON att.member_id = m.member_id where date BETWEEN $1 and $2 AND att.member_id=$3")
         .bind(start_date)
         .bind(end_date)
         .bind(self.member_id)
@@ -166,10 +166,10 @@ impl AttendanceInfo {
         Ok(rows)
     }
 
-    async fn on_date(&self, ctx: &Context<'_>, date: NaiveDate) -> Result<Attendance> {
+    async fn on_date(&self, ctx: &Context<'_>, date: NaiveDate) -> Result<AttendanceRecord> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
-        let rows = sqlx::query_as::<_, Attendance>(
+        let rows = sqlx::query_as::<_, AttendanceRecord>(
             "SELECT * FROM Attendance WHERE date = $1 AND member_id=$2",
         )
         .bind(date)

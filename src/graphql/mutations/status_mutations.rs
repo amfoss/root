@@ -3,14 +3,18 @@ use chrono_tz::Asia::Kolkata;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::models::status_update::StatusUpdate;
+use crate::models::status_update::StatusUpdateRecord;
 
 #[derive(Default)]
 pub struct StatusMutations;
 
 #[Object]
 impl StatusMutations {
-    async fn mark_status_update(&self, ctx: &Context<'_>, email: String) -> Result<StatusUpdate> {
+    async fn mark_status_update(
+        &self,
+        ctx: &Context<'_>,
+        email: String,
+    ) -> Result<StatusUpdateRecord> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context");
         #[allow(deprecated)]
         let yesterday = chrono::Utc::now()
@@ -19,7 +23,7 @@ impl StatusMutations {
             .naive_local()
             - chrono::Duration::days(1);
 
-        let status = sqlx::query_as::<_, StatusUpdate>(
+        let status = sqlx::query_as::<_, StatusUpdateRecord>(
             "UPDATE StatusUpdateHistory SET
                 is_updated = true
             WHERE member_id = (SELECT member_id from Member where email=$1)

@@ -4,7 +4,7 @@ use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::models::{member::Member, status_update::StatusUpdateStreakInfo};
+use crate::models::{member::Member, status_update::StatusUpdateStreak};
 
 #[derive(Default)]
 pub struct MemberQueries;
@@ -79,16 +79,53 @@ impl MemberQueries {
 
 #[Object]
 impl StatusInfo {
-    async fn streak(&self, ctx: &Context<'_>) -> Vec<StatusUpdateStreakInfo> {
+    async fn streak(&self, ctx: &Context<'_>) -> Result<StatusUpdateStreak> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
-        sqlx::query_as::<_, StatusUpdateStreakInfo>(
-            "SELECT current_streak, max_streak FROM StatusUpdateStreak WHERE member_id = $1",
+        // The below is based on the classic 'islands and gaps' problem, adapted to fit our needs.
+        // The key idea used here is in the 'streaks' CTE: for consecutive dates (a streak), the difference
+        // between the date value and its row number (rn) remains constant.
+        // All rows with the same (date - rn) value therefore belong to the same streak.
+        let result = sqlx::query_as::<_, StatusUpdateStreak>(
+            "WITH numbered AS (
+                SELECT
+                    date,
+                    ROW_NUMBER() OVER (ORDER BY date) AS rn
+                FROM statusupdatehistory
+                WHERE member_id = $1
+                  AND is_updated = true
+            ),
+            streaks AS (
+                SELECT
+                    date,
+                    date - rn * INTERVAL '1 day' AS streak_id
+                FROM numbered
+            ),
+            grouped AS (
+                SELECT
+                    COUNT(*) AS streak,
+                    MAX(date) AS end_date
+                FROM streaks
+                GROUP BY streak_id
+            )
+            SELECT
+                MAX(streak) AS max_streak,
+                (
+                    SELECT streak
+                    FROM grouped
+                    WHERE end_date = (
+                        SELECT MAX(end_date)
+                        FROM grouped
+                    )
+                ) AS current_streak
+            FROM grouped;
+        ",
         )
         .bind(self.member_id)
-        .fetch_all(pool.as_ref())
-        .await
-        .unwrap_or_default()
+        .fetch_one(pool.as_ref())
+        .await?;
+
+        Ok(result)
     }
 
     async fn update_count(

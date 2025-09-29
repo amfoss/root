@@ -9,13 +9,21 @@ use crate::models::{member::Member, status_update::StatusUpdateStreakInfo};
 #[derive(Default)]
 pub struct MemberQueries;
 
+pub struct StatusInfo {
+    member_id: i32,
+}
+
+pub struct AttendanceInfo {
+    member_id: i32,
+}
+
 #[Object]
 impl MemberQueries {
     pub async fn members(
         &self,
         ctx: &Context<'_>,
         year: Option<i32>,
-        group_id: Option<i32>,
+        track: Option<String>,
     ) -> Result<Vec<Member>> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
@@ -26,8 +34,8 @@ impl MemberQueries {
             query.push_bind(y);
         }
 
-        if let Some(g) = group_id {
-            query.push(" AND group_id = ");
+        if let Some(g) = track {
+            query.push(" AND track = ");
             query.push_bind(g);
         }
 
@@ -38,10 +46,39 @@ impl MemberQueries {
 
         Ok(members)
     }
+
+    async fn member(
+        &self,
+        ctx: &Context<'_>,
+        member_id: Option<i32>,
+        email: Option<String>,
+    ) -> Result<Option<Member>> {
+        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
+
+        match (member_id, email) {
+            (Some(id), None) => {
+                let member =
+                    sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE member_id = $1")
+                        .bind(id)
+                        .fetch_optional(pool.as_ref())
+                        .await?;
+                Ok(member)
+            }
+            (None, Some(email)) => {
+                let member = sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE email = $1")
+                    .bind(email)
+                    .fetch_optional(pool.as_ref())
+                    .await?;
+                Ok(member)
+            }
+            (Some(_), Some(_)) => Err("Provide only one of member_id or email".into()),
+            (None, None) => Err("Provide either member_id or email".into()),
+        }
+    }
 }
 
-#[ComplexObject]
-impl Member {
+#[Object]
+impl StatusInfo {
     async fn streak(&self, ctx: &Context<'_>) -> Vec<StatusUpdateStreakInfo> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
@@ -54,7 +91,7 @@ impl Member {
         .unwrap_or_default()
     }
 
-    async fn status_update_count_by_date(
+    async fn update_count(
         &self,
         ctx: &Context<'_>,
         start_date: NaiveDate,
@@ -71,8 +108,28 @@ impl Member {
 
         Ok(result)
     }
+}
 
-    async fn attendance_by_date(&self, ctx: &Context<'_>, date: NaiveDate) -> Result<Attendance> {
+#[Object]
+impl AttendanceInfo {
+    async fn records(
+        &self,
+        ctx: &Context<'_>,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+    ) -> Result<Vec<Attendance>> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+        let rows = sqlx::query_as::<_, Attendance>("SELECT * FROM Attendance att INNER JOIN member m ON att.member_id = m.member_id where date BETWEEN $1 and $2 AND att.member_id=$3")
+        .bind(start_date)
+        .bind(end_date)
+        .bind(self.member_id)
+        .fetch_all(pool.as_ref())
+        .await?;
+
+        Ok(rows)
+    }
+
+    async fn on_date(&self, ctx: &Context<'_>, date: NaiveDate) -> Result<Attendance> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
         let rows = sqlx::query_as::<_, Attendance>(
@@ -86,7 +143,7 @@ impl Member {
         Ok(rows)
     }
 
-    async fn present_count_by_date(
+    async fn present_count(
         &self,
         ctx: &Context<'_>,
         start_date: NaiveDate,
@@ -116,7 +173,7 @@ impl Member {
         Ok(records)
     }
 
-    async fn absent_count_by_date(
+    async fn absent_count(
         &self,
         ctx: &Context<'_>,
         start_date: NaiveDate,
@@ -159,5 +216,20 @@ impl Member {
         .await?;
 
         Ok(working_days - present)
+    }
+}
+
+#[ComplexObject]
+impl Member {
+    async fn status(&self, _ctx: &Context<'_>) -> StatusInfo {
+        StatusInfo {
+            member_id: self.member_id,
+        }
+    }
+
+    async fn attendance(&self, _ctx: &Context<'_>) -> AttendanceInfo {
+        AttendanceInfo {
+            member_id: self.member_id,
+        }
     }
 }

@@ -1,5 +1,5 @@
 use async_graphql::MergedObject;
-use mutations::{AttendanceMutations, MemberMutations, StreakMutations};
+use mutations::{AttendanceMutations, MemberMutations, StatusMutations};
 use queries::MemberQueries;
 
 pub mod mutations;
@@ -9,4 +9,4 @@ pub mod queries;
 pub struct Query(MemberQueries);
 
 #[derive(MergedObject, Default)]
-pub struct Mutation(MemberMutations, AttendanceMutations, StreakMutations);
+pub struct Mutation(MemberMutations, AttendanceMutations, StatusMutations);

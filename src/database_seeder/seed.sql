@@ -57,39 +57,6 @@ JOIN (
 WHERE (random() < 0.75)
 ON CONFLICT (member_id, date) DO NOTHING;
 
--- StatusUpdateStreak
-INSERT INTO StatusUpdateStreak (
-    member_id, current_streak, max_streak
-)
-SELECT 
-    member_id,
-    FLOOR(random() * 10 + 1)::INT,
-    FLOOR(random() * 30 + 10)::INT
-FROM member
-ON CONFLICT (member_id) DO NOTHING;
-
-
--- Project
-INSERT INTO Project (
-    member_id, title
-)
-SELECT 
-    (i % 60) + 1,
-    CASE
-        WHEN i % 3 = 0 THEN 'Machine Learning Project ' || i
-        WHEN i % 3 = 1 THEN 'Web Development Project ' || i
-        ELSE 'Data Analysis Project ' || i
-    END
-FROM generate_series(1, 200) AS i
-WHERE NOT EXISTS (
-    SELECT 1 FROM Project 
-    WHERE member_id = (i % 60) + 1 AND title = CASE
-        WHEN i % 3 = 0 THEN 'Machine Learning Project ' || i
-        WHEN i % 3 = 1 THEN 'Web Development Project ' || i
-        ELSE 'Data Analysis Project ' || i
-    END
-);
-
 
 -- StatusUpdateHistory
 INSERT INTO StatusUpdateHistory (

@@ -102,7 +102,7 @@ async fn update_status_history(members: &Vec<Member>, pool: &PgPool) {
 
     for member in members {
         let status_update = sqlx::query(
-            "INSERT INTO StatusUpdateHistory (member_id, date, is_updated) 
+            "INSERT INTO StatusUpdateHistory (member_id, date, is_sent)
                      VALUES ($1, $2, $3)
                      ON CONFLICT (member_id, date) DO NOTHING",
         )

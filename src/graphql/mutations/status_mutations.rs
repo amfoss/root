@@ -25,7 +25,7 @@ impl StatusMutations {
 
         let status = sqlx::query_as::<_, StatusUpdateRecord>(
             "UPDATE StatusUpdateHistory SET
-                is_updated = true
+                is_sent = true
             WHERE member_id IN (SELECT member_id from Member where email = ANY($1))
             AND date = $2
             RETURNING *

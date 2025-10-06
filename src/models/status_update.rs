@@ -7,7 +7,7 @@ pub struct StatusUpdateRecord {
     pub update_id: i32,
     pub member_id: i32,
     pub date: NaiveDate,
-    pub is_updated: bool,
+    pub is_sent: bool,
 }
 
 #[derive(SimpleObject, FromRow)]

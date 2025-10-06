@@ -93,7 +93,7 @@ impl StatusInfo {
                     ROW_NUMBER() OVER (ORDER BY date) AS rn
                 FROM statusupdatehistory
                 WHERE member_id = $1
-                  AND is_updated = true
+                  AND is_sent = true
             ),
             streaks AS (
                 SELECT

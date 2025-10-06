@@ -60,7 +60,7 @@ ON CONFLICT (member_id, date) DO NOTHING;
 
 -- StatusUpdateHistory
 INSERT INTO StatusUpdateHistory (
-    member_id, date, is_updated
+    member_id, date, is_sent
 )
 SELECT 
     m.member_id,

@@ -25,14 +25,18 @@ The final two fields are not exposed in the interface for obvious reasons.
 Retrieve attendance records by member ID or date.
 
 ```graphql
-# Get attendance by member ID
+# Get attendance by member ID during a certain time period
 query {
-    attendance(memberId: 1) {
-        attendanceId
-        date
-        isPresent
-        timeIn
-        timeOut
+    member (memberId: 1) {
+        attendance (startDate: ,endDate: ) {
+            records {
+                attendanceId
+                date
+                isPresent
+                timeIn
+                timeOut
+            }
+        }
     }
 }
 ```
@@ -41,14 +45,64 @@ Get all attendance for a specific date
 
 ```graphql
 query {
-    attendanceByDate(date: "2025-02-27") {
+  allMembers {
+    memberId
+    name
+    attendance {
+      records(startDate: , endDate: ) {
         attendanceId
-        memberId
-        name
-        year
+        date
         isPresent
         timeIn
         timeOut
+      }
+    }
+  }
+}
+```
+
+Get absent and present count for member during a time period
+
+```graphql
+query {
+  member (memberId: ) {
+    memberId
+    name
+    attendance {
+        records {
+            presentCount(startDate: ,endDate: )
+            absentCount(startDate: ,endDate: )
+        }
+    }
+  }
+}
+```
+
+Get all members attendance for a particular date
+```graphql
+query {
+    allMembers {
+        memberId
+        name
+        attendance {
+            onDate (date: ) {
+                isPresent
+                timeIn
+                timeOut
+            }
+        }
+    }
+}
+```
+
+Get present or absent count of a particular time period
+```graphql
+query {
+    allMembers {
+        attendance {
+            presentCount(startDate: ,endDate: )
+            absentCount(startDate: ,endDate: )
+        }
     }
 }
 ```

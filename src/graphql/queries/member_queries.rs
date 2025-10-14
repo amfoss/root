@@ -168,13 +168,20 @@ impl StatusInfo {
     async fn consecutive_misses(&self, ctx: &Context<'_>) -> Result<Option<i64>> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
+        // We measure the miss streak by finding the distance to the last sent update.
+        // The inner most subquery here is used for filtering out dates which occur during a break.
         let result: Option<i64> = sqlx::query_scalar(
             "
             SELECT distance
             FROM (
               SELECT is_sent, ROW_NUMBER() OVER (ORDER BY date DESC) - 1 AS distance
-              FROM StatusUpdateHistory
+              FROM StatusUpdateHistory suh
               WHERE member_id = $1
+              AND NOT EXISTS (
+                SELECT * FROM StatusBreaks sb
+                WHERE year = (SELECT year from Member where member_id=$1)
+                AND suh.date BETWEEN sb.start_date AND sb.end_date
+              )
             )
             WHERE is_sent = TRUE
             ORDER BY distance ASC

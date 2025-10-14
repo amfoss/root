@@ -3,6 +3,7 @@ use chrono::NaiveDate;
 use sqlx::FromRow;
 
 #[derive(SimpleObject, FromRow)]
+#[graphql(complex)]
 pub struct StatusUpdateRecord {
     pub update_id: i32,
     pub member_id: i32,

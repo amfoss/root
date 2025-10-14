@@ -214,6 +214,27 @@ impl StatusInfo {
     }
 }
 
+#[ComplexObject]
+impl StatusUpdateRecord {
+    async fn on_break(&self, ctx: &Context<'_>) -> Result<bool> {
+        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
+
+        let is_on_break = sqlx::query_scalar(
+            "SELECT EXISTS (
+                SELECT 1 from StatusBreaks
+                WHERE year = (SELECT year FROM Member WHERE member_id = $1)
+                AND $2 BETWEEN start_date AND end_date
+            )",
+        )
+        .bind(self.member_id)
+        .bind(self.date)
+        .fetch_optional(pool.as_ref())
+        .await?;
+
+        Ok(is_on_break.unwrap_or(false))
+    }
+}
+
 #[Object]
 impl AttendanceInfo {
     async fn records(

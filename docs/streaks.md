@@ -59,13 +59,10 @@ query {
 ### Increment Streak
 ```graphql
 mutation {
-    incrementStreak(
-        input: {
-            memberId: 1
-        }
-    ) {
-        currentStreak
-        maxStreak
+    incrementStreak(emails: ) {
+        memberId
+        date
+        isSent
     }
 }
 ```

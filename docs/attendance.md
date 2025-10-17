@@ -113,12 +113,10 @@ Record a member's attendance for the day.
 ```graphql
 mutation {
     markAttendance(
-        input: {
             memberId: 1
             date: "2025-01-15"
             timeIn: "09:00:00"
-            timeOut: "17:00:00"
-        }
+            timeOut: "17:00:00"      
     ) {
         attendanceId
         isPresent

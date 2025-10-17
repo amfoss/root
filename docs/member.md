@@ -93,5 +93,26 @@ mutation {
 ``` 
 
 ### Update Member
-
 Update details of an existing member
+```graphql
+mutation {
+    updateMember (
+        input: {
+            memberId
+            rollNo
+            name
+            email
+            sex
+            year
+            hostel
+            macAddress
+            discordId
+            groupId
+            track
+        }
+    ) {
+        memberId
+        name
+    }
+}
+```

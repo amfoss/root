@@ -118,10 +118,11 @@ mutation {
             timeIn: "09:00:00"
             timeOut: "17:00:00"      
     ) {
-        attendanceId
-        isPresent
-        timeIn
-        timeOut
+        attendanceId:
+        date:
+        isPresent:
+        timeIn:
+        timeOut:
     }
 }
 ```

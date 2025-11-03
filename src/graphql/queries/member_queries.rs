@@ -27,7 +27,7 @@ impl MemberQueries {
     ) -> Result<Vec<Member>> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
-        let mut query = sqlx::QueryBuilder::new("SELECT * FROM Member WHERE 1=1");
+        let mut query = sqlx::QueryBuilder::new("SELECT * FROM active_members WHERE 1=1");
 
         if let Some(y) = year {
             query.push(" AND year = ");
@@ -57,18 +57,20 @@ impl MemberQueries {
 
         match (member_id, email) {
             (Some(id), None) => {
-                let member =
-                    sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE member_id = $1")
-                        .bind(id)
-                        .fetch_optional(pool.as_ref())
-                        .await?;
+                let member = sqlx::query_as::<_, Member>(
+                    "SELECT * FROM active_members WHERE member_id = $1",
+                )
+                .bind(id)
+                .fetch_optional(pool.as_ref())
+                .await?;
                 Ok(member)
             }
             (None, Some(email)) => {
-                let member = sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE email = $1")
-                    .bind(email)
-                    .fetch_optional(pool.as_ref())
-                    .await?;
+                let member =
+                    sqlx::query_as::<_, Member>("SELECT * FROM active_members WHERE email = $1")
+                        .bind(email)
+                        .fetch_optional(pool.as_ref())
+                        .await?;
                 Ok(member)
             }
             (Some(_), Some(_)) => Err("Provide only one of member_id or email".into()),
@@ -178,7 +180,7 @@ impl StatusInfo {
                 is_sent = TRUE
                 OR NOT EXISTS (
                     SELECT * FROM StatusBreaks sb
-                    WHERE year = (SELECT year from Member where member_id=$1)
+                    WHERE year = (SELECT year from active_members where member_id=$1)
                     AND suh.date BETWEEN sb.start_date AND sb.end_date
                 )
               )
@@ -222,7 +224,7 @@ impl StatusUpdateRecord {
         let is_on_break = sqlx::query_scalar(
             "SELECT EXISTS (
                 SELECT 1 from StatusBreaks
-                WHERE year = (SELECT year FROM Member WHERE member_id = $1)
+                WHERE year = (SELECT year FROM active_members WHERE member_id = $1)
                 AND $2 BETWEEN start_date AND end_date
             )",
         )

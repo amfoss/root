@@ -25,6 +25,7 @@ pub struct Member {
     pub group_id: i32,
     pub track: Option<String>,
     pub github_user: Option<String>,
+    pub is_alumni: bool,
     #[graphql(skip)] // Don't expose internal fields/meta-data
     pub created_at: NaiveDateTime,
 }
@@ -58,4 +59,5 @@ pub struct UpdateMemberInput {
     pub group_id: Option<i32>,
     pub track: Option<String>,
     pub github_user: Option<String>,
+    pub is_alumni: Option<bool>,
 }

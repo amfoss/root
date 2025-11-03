@@ -38,7 +38,7 @@ pub async fn run_daily_task_at_midnight(pool: Arc<PgPool>) {
 /// * Insert new attendance records everyday for [`presense`](https://www.github.com/amfoss/presense) to update them later in the day.
 async fn execute_daily_task(pool: Arc<PgPool>) {
     // Members is queried outside of each function to avoid repetition
-    let members = sqlx::query_as::<_, Member>("SELECT * FROM Member")
+    let members = sqlx::query_as::<_, Member>("SELECT * FROM active_members")
         .fetch_all(&*pool)
         .await;
 

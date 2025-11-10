@@ -1,5 +1,6 @@
 use async_graphql::EmptySubscription;
 use axum::http::{HeaderValue, Method};
+use sqlx::Executor;
 use sqlx::PgPool;
 use std::sync::Arc;
 use time::UtcOffset;
@@ -114,6 +115,12 @@ async fn setup_database(database_url: &str) -> Arc<PgPool> {
     let pool = sqlx::postgres::PgPoolOptions::new()
         .min_connections(2)
         .max_connections(3)
+        .after_connect(|conn, _meta| {
+            Box::pin(async move {
+                conn.execute("SET TIME ZONE 'Asia/Kolkata';").await?;
+                Ok(())
+            })
+        })
         .connect(database_url)
         .await
         .expect("Pool must be initialized properly.");

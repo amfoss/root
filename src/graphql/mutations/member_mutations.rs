@@ -17,7 +17,7 @@ impl MemberMutations {
 
         let member = sqlx::query_as::<_, Member>(
             "INSERT INTO Member (roll_no, name, email, sex, year, hostel, mac_address, discord_id, group_id, track, github_user, is_alumni, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *"
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *"
         )
         .bind(&input.roll_no)
         .bind(&input.name)
@@ -56,7 +56,7 @@ impl MemberMutations {
                 track = COALESCE($10, track),
                 github_user = COALESCE($11, github_user),
                 is_alumni = COALESCE($12, is_alumni)
-            WHERE member_id = $12
+            WHERE member_id = $13
             RETURNING *",
         )
         .bind(&input.roll_no)

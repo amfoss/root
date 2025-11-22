@@ -1,10 +1,11 @@
 use async_graphql::EmptySubscription;
+use axum::http::header::CONTENT_TYPE;
 use axum::http::{HeaderValue, Method};
 use sqlx::Executor;
 use sqlx::PgPool;
 use std::sync::Arc;
 use time::UtcOffset;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -13,6 +14,7 @@ use database_seeder::seed_database;
 use graphql::{Mutation, Query};
 use routes::setup_router;
 
+pub mod auth;
 pub mod daily_task;
 pub mod database_seeder;
 pub mod graphql;
@@ -21,12 +23,15 @@ pub mod routes;
 
 /// Handles all over environment variables in one place.
 // TODO: Replace with `Config.rs` crate.
-struct Config {
-    env: String,
+#[derive(Clone)]
+pub struct Config {
+    pub env: String,
     secret_key: String,
     database_url: String,
     port: String,
     seeding_enabled: bool,
+    pub frontend_url: String,
+    pub hostname: String,
 }
 
 impl Config {
@@ -40,6 +45,8 @@ impl Config {
             seeding_enabled: std::env::var("SEEDING_ENABLED")
                 .map(|v| v.to_lowercase() == "true")
                 .unwrap_or(false),
+            frontend_url: std::env::var("FRONTEND_URL").expect("FRONTEND_URL not set"),
+            hostname: std::env::var("HOSTNAME").expect("HOSTNAME not set"),
         }
     }
 }
@@ -50,19 +57,20 @@ async fn main() {
     setup_tracing(&config.env);
 
     let pool = setup_database(&config.database_url).await;
-    let schema = build_graphql_schema(pool.clone(), config.secret_key);
+    let schema = build_graphql_schema(pool.clone(), config.secret_key.clone());
 
     if config.seeding_enabled {
         info!("Seeding database...");
         seed_database(&pool).await;
     }
 
-    tokio::task::spawn(async {
-        run_daily_task_at_midnight(pool).await;
+    let pool_for_task = pool.clone();
+    tokio::task::spawn(async move {
+        run_daily_task_at_midnight(pool_for_task).await;
     });
 
     let cors = setup_cors();
-    let router = setup_router(schema, cors, config.env == "development");
+    let router = setup_router(schema, cors, config.clone(), pool);
 
     info!("Starting Root...");
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port))
@@ -145,14 +153,15 @@ fn build_graphql_schema(
 
 fn setup_cors() -> CorsLayer {
     // TODO: Replace hardcoded strings
-    let _origins: [HeaderValue; 2] = [
-        "http://127.0.0.1:3000".parse().unwrap(),
+    let origins: [HeaderValue; 2] = [
+        "http://localhost:3000".parse().unwrap(),
         "https://home.amfoss.in".parse().unwrap(),
     ];
 
     CorsLayer::new()
-        // TODO 2: https://github.com/amfoss/root/issues/151, enabling all origins for the time being
-        .allow_origin(Any)
+        // TODO 2: https://github.com/amfoss/root/issues/151
+        .allow_credentials(true)
+        .allow_origin(origins)
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
-        .allow_headers(tower_http::cors::Any)
+        .allow_headers([CONTENT_TYPE])
 }

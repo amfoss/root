@@ -1,3 +1,5 @@
+use crate::auth::guards::AuthGuard;
+use crate::auth::AuthContext;
 use crate::models::{attendance::AttendanceRecord, status_update::StatusUpdateRecord};
 use async_graphql::{ComplexObject, Context, Object, Result};
 use chrono::NaiveDate;
@@ -19,6 +21,7 @@ pub struct AttendanceInfo {
 
 #[Object]
 impl MemberQueries {
+    #[graphql(guard = "AuthGuard")]
     pub async fn all_members(
         &self,
         ctx: &Context<'_>,
@@ -47,6 +50,8 @@ impl MemberQueries {
         Ok(members)
     }
 
+    /// Fetch the details of a specific member
+    #[graphql(guard = "AuthGuard")]
     async fn member(
         &self,
         ctx: &Context<'_>,
@@ -74,6 +79,15 @@ impl MemberQueries {
             (Some(_), Some(_)) => Err("Provide only one of member_id or email".into()),
             (None, None) => Err("Provide either member_id or email".into()),
         }
+    }
+
+    /// Fetch the details of the currently logged in member
+    #[graphql(guard = "AuthGuard")]
+    async fn me(&self, ctx: &Context<'_>) -> Result<Member> {
+        let auth = ctx.data::<AuthContext>()?;
+
+        // The AuthGuard ensures that the user is authenticated, so we can unwrap here.
+        Ok(auth.user.clone().unwrap())
     }
 }
 

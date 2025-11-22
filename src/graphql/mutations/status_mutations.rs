@@ -3,6 +3,7 @@ use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
+use crate::auth::guards::{AdminGuard, AdminOrBotGuard};
 use crate::models::status_update::{CreateStatusBreakInput, StatusBreakRecord, StatusUpdateRecord};
 
 #[derive(Default)]
@@ -10,6 +11,7 @@ pub struct StatusMutations;
 
 #[Object]
 impl StatusMutations {
+    #[graphql(name = "markStatusUpdate", guard = "AdminOrBotGuard")]
     async fn mark_status_update(
         &self,
         ctx: &Context<'_>,
@@ -34,6 +36,7 @@ impl StatusMutations {
         Ok(status)
     }
 
+    #[graphql(name = "createStatusBreak", guard = "AdminGuard")]
     async fn create_status_break(
         &self,
         ctx: &Context<'_>,

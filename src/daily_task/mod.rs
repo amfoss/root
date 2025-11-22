@@ -1,3 +1,4 @@
+use crate::auth::session::SessionService;
 use chrono::NaiveTime;
 use chrono_tz::Asia::Kolkata;
 use sqlx::PgPool;
@@ -36,7 +37,14 @@ pub async fn run_daily_task_at_midnight(pool: Arc<PgPool>) {
 
 /// This function does a number of things, including:
 /// * Insert new attendance records everyday for [`presense`](https://www.github.com/amfoss/presense) to update them later in the day.
+/// * Delete expired user sessions.
 async fn execute_daily_task(pool: Arc<PgPool>) {
+    if let Ok(rows_deleted) = SessionService::cleanup_expired_sessions(&pool).await {
+        if rows_deleted > 0 {
+            tracing::info!("Cleaned up {:?} expired sessions", rows_deleted);
+        }
+    }
+
     // Members is queried outside of each function to avoid repetition
     let members = sqlx::query_as::<_, Member>("SELECT * FROM Member")
         .fetch_all(&*pool)

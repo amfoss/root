@@ -22,7 +22,8 @@ pub struct StatusBreakRecord {
     pub id: i32,
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
-    pub year: i32,
+    pub year: Option<i32>,
+    pub member_id: Option<i32>,
     pub reason: Option<String>,
 }
 
@@ -30,6 +31,7 @@ pub struct StatusBreakRecord {
 pub struct CreateStatusBreakInput {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
-    pub year: i32,
+    pub year: Option<i32>,
+    pub member_id: Option<i32>,
     pub reason: Option<String>,
 }

@@ -43,19 +43,35 @@ impl StatusMutations {
         input: CreateStatusBreakInput,
     ) -> Result<StatusBreakRecord> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context");
-        let status = sqlx::query_as::<_, StatusBreakRecord>(
-            "INSERT INTO StatusBreaks (start_date, end_date, year, reason)
-             VALUES ($1, $2, $3, $4)
+
+        match (&input.year, &input.member_id) {
+            (Some(_), Some(_)) => {
+                return Err("Cannot specify both year and member_id. A status break must apply to either a year or a member, not both.".into());
+            }
+            (None, None) => {
+                return Err("Must specify either year or member_id. A status break must apply to either a year or a member.".into());
+            }
+            _ => {}
+        }
+
+        if input.start_date >= input.end_date {
+            return Err("start_date must be before end_date".into());
+        }
+
+        let status_break = sqlx::query_as::<_, StatusBreakRecord>(
+            "INSERT INTO StatusBreaks (start_date, end_date, year, member_id, reason)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING *
             ",
         )
         .bind(input.start_date)
         .bind(input.end_date)
         .bind(input.year)
+        .bind(input.member_id)
         .bind(&input.reason)
         .fetch_one(pool.as_ref())
         .await?;
 
-        Ok(status)
+        Ok(status_break)
     }
 }

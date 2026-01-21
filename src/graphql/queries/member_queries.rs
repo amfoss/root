@@ -191,9 +191,15 @@ impl StatusInfo {
               AND (
                 is_sent = TRUE
                 OR NOT EXISTS (
-                    SELECT * FROM StatusBreaks sb
-                    WHERE year = (SELECT year from Member where member_id=$1)
-                    AND suh.date BETWEEN sb.start_date AND sb.end_date
+                    SELECT 1 FROM StatusBreaks sb
+                    WHERE suh.date BETWEEN sb.start_date AND sb.end_date
+                    AND (
+                        -- Year-wide break
+                        sb.year = (SELECT year FROM Member WHERE member_id = $1)
+                        OR
+                        -- Member-specific break
+                        sb.member_id = $1
+                    )
                 )
               )
             )
@@ -235,13 +241,19 @@ impl StatusUpdateRecord {
 
         let is_on_break = sqlx::query_scalar(
             "SELECT EXISTS (
-                SELECT 1 from StatusBreaks
-                WHERE year = (SELECT year FROM Member WHERE member_id = $1)
-                AND $2 BETWEEN start_date AND end_date
+                SELECT 1 FROM StatusBreaks
+                WHERE $1 BETWEEN start_date AND end_date
+                AND (
+                    -- Year-wide break
+                    year = (SELECT year FROM Member WHERE member_id = $2)
+                    OR
+                    -- Member-specific break
+                    member_id = $2
+                )
             )",
         )
-        .bind(self.member_id)
         .bind(self.date)
+        .bind(self.member_id)
         .fetch_optional(pool.as_ref())
         .await?;
 

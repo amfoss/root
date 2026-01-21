@@ -6,7 +6,7 @@ RUN cargo init
 # Compile deps in a separate layer (for caching)
 COPY Cargo.toml Cargo.lock ./
 RUN apt-get update
-RUN apt install -y pkg-config libssl-dev
+RUN apt install -y pkg-config libssl-dev ca-certificates
 RUN cargo build --release
 
 # Compile for release

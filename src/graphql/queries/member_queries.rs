@@ -57,11 +57,12 @@ impl MemberQueries {
         ctx: &Context<'_>,
         member_id: Option<i32>,
         email: Option<String>,
+        discord_id: Option<String>,
     ) -> Result<Option<Member>> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
-        match (member_id, email) {
-            (Some(id), None) => {
+        match (member_id, email, discord_id) {
+            (Some(id), None, None) => {
                 let member =
                     sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE member_id = $1")
                         .bind(id)
@@ -69,19 +70,26 @@ impl MemberQueries {
                         .await?;
                 Ok(member)
             }
-            (None, Some(email)) => {
+            (None, Some(email), None) => {
                 let member = sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE email = $1")
                     .bind(email)
                     .fetch_optional(pool.as_ref())
                     .await?;
                 Ok(member)
             }
-            (Some(_), Some(_)) => Err("Provide only one of member_id or email".into()),
-            (None, None) => Err("Provide either member_id or email".into()),
+            (None, None, Some(discord_id)) => {
+                let member =
+                    sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE discord_id = $1")
+                        .bind(discord_id)
+                        .fetch_optional(pool.as_ref())
+                        .await?;
+                Ok(member)
+            }
+            _ => Err("Provide exactly one of member_id, email, or discord_id".into()),
         }
     }
 
-    /// Fetch the details of the currently logged in member
+    // Fetch the details of the currently logged in member
     #[graphql(guard = "AuthGuard")]
     async fn me(&self, ctx: &Context<'_>) -> Result<Member> {
         let auth = ctx.data::<AuthContext>()?;

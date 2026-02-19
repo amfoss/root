@@ -7,7 +7,9 @@ use sha2::Sha256;
 use sqlx::PgPool;
 
 use crate::auth::guards::AdminOrBotGuard;
-use crate::models::attendance::{AttendanceRecord, MarkAttendanceInput, MarkLeaveInput, MarkLeaveOutput};
+use crate::models::attendance::{
+    AttendanceRecord, MarkAttendanceInput, MarkLeaveInput, MarkLeaveOutput,
+};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -71,7 +73,7 @@ impl AttendanceMutations {
             .data::<Arc<PgPool>>()
             .expect("Pool not found in context");
         let now = chrono::Utc::now().with_timezone(&Kolkata);
-        
+
         let leave: MarkLeaveOutput = sqlx::query_as::<_, MarkLeaveOutput>(
             "INSERT INTO Leave
             (discord_id, date, duration, reason, approved_by) 

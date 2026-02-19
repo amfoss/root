@@ -38,3 +38,9 @@ pub struct MarkLeaveOutput {
     pub duration: i32,
     pub approved_by: Option<String>,
 }
+
+#[derive(SimpleObject, FromRow)]
+pub struct LeaveCountOutput {
+    pub discord_id: String,
+    pub count: i32,
+}

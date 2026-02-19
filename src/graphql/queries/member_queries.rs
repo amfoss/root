@@ -1,6 +1,9 @@
 use crate::auth::guards::AuthGuard;
 use crate::auth::AuthContext;
-use crate::models::{attendance::AttendanceRecord, status_update::StatusUpdateRecord};
+use crate::models::{
+    attendance::{AttendanceRecord, LeaveCountOutput},
+    status_update::StatusUpdateRecord,
+};
 use async_graphql::{ComplexObject, Context, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;
@@ -396,5 +399,38 @@ impl Member {
         AttendanceInfo {
             member_id: self.member_id,
         }
+    }
+
+    async fn leave_count(
+        &self,
+        ctx: &Context<'_>,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+    ) -> Result<LeaveCountOutput> {
+        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
+
+        if end_date < start_date {
+            return Err("end_date must be >= start_date".into());
+        }
+        let leave = sqlx::query_as::<_, LeaveCountOutput>(
+            r#"
+                SELECT discord_id, SUM(duration) AS count
+                FROM "Leave"
+                WHERE date > $1
+                  AND (date + duration) < $2
+                  AND discord_id = $3
+                GROUP BY discord_id
+                "#,
+        )
+        .bind(start_date)
+        .bind(end_date)
+        .bind(
+            self.discord_id
+                .as_ref()
+                .expect("Leave count needs discord_id"),
+        )
+        .fetch_one(pool.as_ref())
+        .await?;
+        Ok(leave)
     }
 }

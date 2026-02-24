@@ -1,16 +1,14 @@
 use std::sync::Arc;
 
 use async_graphql::{Context, Object, Result};
-use chrono::{NaiveDateTime, NaiveDate};
+use chrono::{NaiveDate, NaiveDateTime};
 use chrono_tz::Asia::Kolkata;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use sqlx::PgPool;
 
 use crate::auth::guards::AdminOrBotGuard;
-use crate::models::attendance::{
-    AttendanceRecord, MarkAttendanceInput, MarkLeaveOutput
-};
+use crate::models::attendance::{AttendanceRecord, MarkAttendanceInput, MarkLeaveOutput};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -73,7 +71,7 @@ impl AttendanceMutations {
         reason: String,
         applied_at: NaiveDateTime,
         from_date: NaiveDate,
-        duration: i32
+        duration: i32,
     ) -> Result<MarkLeaveOutput> {
         let pool = ctx
             .data::<Arc<PgPool>>()

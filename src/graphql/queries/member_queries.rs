@@ -1,9 +1,6 @@
 use crate::auth::guards::AuthGuard;
 use crate::auth::AuthContext;
-use crate::models::{
-    attendance::{AttendanceRecord, LeaveCountOutput},
-    status_update::StatusUpdateRecord,
-};
+use crate::models::{attendance::AttendanceRecord, status_update::StatusUpdateRecord};
 use async_graphql::{ComplexObject, Context, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;
@@ -406,21 +403,24 @@ impl Member {
         ctx: &Context<'_>,
         start_date: NaiveDate,
         end_date: NaiveDate,
-    ) -> Result<LeaveCountOutput> {
+    ) -> Result<i64> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
         if end_date < start_date {
             return Err("end_date must be >= start_date".into());
         }
-        let leave = sqlx::query_as::<_, LeaveCountOutput>(
+        let total: Option<i64> = sqlx::query_scalar(
             r#"
-                SELECT discord_id, SUM(duration) AS count
-                FROM "Leave"
-                WHERE date > $1
-                  AND (date + duration) < $2
-                  AND discord_id = $3
-                GROUP BY discord_id
-                "#,
+            SELECT SUM(
+                LEAST(from_date + duration - 1, $2)
+                - GREATEST(from_date, $1)
+                + 1
+            )
+            FROM leave
+            WHERE from_date <= $2
+              AND (from_date + duration - 1) >= $1
+              AND discord_id = $3
+            "#,
         )
         .bind(start_date)
         .bind(end_date)
@@ -431,6 +431,6 @@ impl Member {
         )
         .fetch_one(pool.as_ref())
         .await?;
-        Ok(leave)
+        Ok(total.unwrap_or(0))
     }
 }

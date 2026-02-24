@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_graphql::{Context, Object, Result};
+use chrono::{NaiveDateTime, NaiveDate};
 use chrono_tz::Asia::Kolkata;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -8,7 +9,7 @@ use sqlx::PgPool;
 
 use crate::auth::guards::AdminOrBotGuard;
 use crate::models::attendance::{
-    AttendanceRecord, MarkAttendanceInput, MarkLeaveInput, MarkLeaveOutput,
+    AttendanceRecord, MarkAttendanceInput, MarkLeaveOutput
 };
 
 type HmacSha256 = Hmac<Sha256>;
@@ -64,28 +65,58 @@ impl AttendanceMutations {
         Ok(attendance)
     }
 
-    async fn mark_leave(
+    #[graphql(name = "leaveApplication", guard = "AdminOrBotGuard")]
+    async fn leave_application(
         &self,
         ctx: &Context<'_>,
-        input: MarkLeaveInput,
+        discord_id: String,
+        reason: String,
+        applied_at: NaiveDateTime,
+        from_date: NaiveDate,
+        duration: i32
     ) -> Result<MarkLeaveOutput> {
         let pool = ctx
             .data::<Arc<PgPool>>()
             .expect("Pool not found in context");
-        let now = chrono::Utc::now().with_timezone(&Kolkata);
 
         let leave: MarkLeaveOutput = sqlx::query_as::<_, MarkLeaveOutput>(
             "INSERT INTO Leave
-            (discord_id, date, duration, reason, approved_by) 
+            (discord_id, reason, applied_at, from_date, duration) 
             VALUES ($1, $2, $3, $4, $5)
             RETURNING *
             ",
         )
-        .bind(input.discord_id)
-        .bind(now)
-        .bind(input.duration)
-        .bind(input.reason)
-        .bind(input.approved_by)
+        .bind(discord_id)
+        .bind(reason)
+        .bind(applied_at)
+        .bind(from_date)
+        .bind(duration)
+        .fetch_one(pool.as_ref())
+        .await?;
+
+        Ok(leave)
+    }
+
+    #[graphql(name = "approveLeave", guard = "AdminOrBotGuard")]
+    async fn approve_leave(
+        &self,
+        ctx: &Context<'_>,
+        discord_id: String,
+        approved_by: String,
+    ) -> Result<MarkLeaveOutput> {
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
+
+        let leave: MarkLeaveOutput = sqlx::query_as::<_, MarkLeaveOutput>(
+            "UPDATE Leave
+            SET approved_by = $1
+            WHERE discord_id = $2
+            RETURNING *
+            ",
+        )
+        .bind(approved_by)
+        .bind(discord_id)
         .fetch_one(pool.as_ref())
         .await?;
 

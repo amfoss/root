@@ -23,7 +23,7 @@ pub struct MarkAttendanceInput {
 }
 
 #[derive(SimpleObject, FromRow)]
-pub struct MarkLeaveOutput {
+pub struct LeaveRecord {
     pub discord_id: String,
     pub from_date: NaiveDate,
     pub applied_at: NaiveDateTime,

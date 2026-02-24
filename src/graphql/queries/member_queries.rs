@@ -91,7 +91,7 @@ impl MemberQueries {
         }
     }
 
-    // Fetch the details of the currently logged in member
+    /// Fetch the details of the currently logged in member
     #[graphql(guard = "AuthGuard")]
     async fn me(&self, ctx: &Context<'_>) -> Result<Member> {
         let auth = ctx.data::<AuthContext>()?;
@@ -434,11 +434,16 @@ impl Member {
         start_date: NaiveDate,
         end_date: NaiveDate,
     ) -> Result<i64> {
-        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
+        let pool = ctx.data::<Arc<PgPool>>()?;
 
         if end_date < start_date {
             return Err("end_date must be >= start_date".into());
         }
+        let discord_id = self
+            .discord_id
+            .as_ref()
+            .expect("Leave count needs discord_id");
+
         let total: Option<i64> = sqlx::query_scalar(
             r#"
             SELECT SUM(
@@ -454,11 +459,7 @@ impl Member {
         )
         .bind(start_date)
         .bind(end_date)
-        .bind(
-            self.discord_id
-                .as_ref()
-                .expect("Leave count needs discord_id"),
-        )
+        .bind(discord_id)
         .fetch_one(pool.as_ref())
         .await?;
         Ok(total.unwrap_or(0))

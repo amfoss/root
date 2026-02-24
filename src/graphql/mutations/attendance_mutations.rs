@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use async_graphql::{Context, Object, Result};
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::NaiveDate;
 use chrono_tz::Asia::Kolkata;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use sqlx::PgPool;
 
 use crate::auth::guards::AdminOrBotGuard;
-use crate::models::attendance::{AttendanceRecord, MarkAttendanceInput, MarkLeaveOutput};
+use crate::models::attendance::{AttendanceRecord, LeaveRecord, MarkAttendanceInput};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -69,24 +69,22 @@ impl AttendanceMutations {
         ctx: &Context<'_>,
         discord_id: String,
         reason: String,
-        applied_at: NaiveDateTime,
         from_date: NaiveDate,
         duration: i32,
-    ) -> Result<MarkLeaveOutput> {
+    ) -> Result<LeaveRecord> {
         let pool = ctx
             .data::<Arc<PgPool>>()
             .expect("Pool not found in context");
 
-        let leave: MarkLeaveOutput = sqlx::query_as::<_, MarkLeaveOutput>(
+        let leave: LeaveRecord = sqlx::query_as::<_, LeaveRecord>(
             "INSERT INTO Leave
-            (discord_id, reason, applied_at, from_date, duration) 
-            VALUES ($1, $2, $3, $4, $5)
+            (discord_id, reason, from_date, duration) 
+            VALUES ($1, $2, $3, $4)
             RETURNING *
             ",
         )
         .bind(discord_id)
         .bind(reason)
-        .bind(applied_at)
         .bind(from_date)
         .bind(duration)
         .fetch_one(pool.as_ref())
@@ -100,23 +98,28 @@ impl AttendanceMutations {
         &self,
         ctx: &Context<'_>,
         discord_id: String,
+        from_date: NaiveDate,
         approved_by: String,
-    ) -> Result<MarkLeaveOutput> {
+    ) -> Result<LeaveRecord> {
         let pool = ctx
             .data::<Arc<PgPool>>()
             .expect("Pool not found in context");
 
-        let leave: MarkLeaveOutput = sqlx::query_as::<_, MarkLeaveOutput>(
+        let leave: LeaveRecord = sqlx::query_as::<_, LeaveRecord>(
             "UPDATE Leave
             SET approved_by = $1
-            WHERE discord_id = $2
+            WHERE discord_id = $2 AND
+            from_date=$3 AND
+            approved_by IS NULL
             RETURNING *
             ",
         )
         .bind(approved_by)
         .bind(discord_id)
-        .fetch_one(pool.as_ref())
-        .await?;
+        .bind(from_date)
+        .fetch_optional(pool.as_ref())
+        .await?
+        .ok_or_else(|| async_graphql::Error::new("no pending leave found to approve"))?;
 
         Ok(leave)
     }

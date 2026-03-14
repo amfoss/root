@@ -93,22 +93,20 @@ impl MemberQueries {
     /// Fetch the roles of a member from the database
     #[graphql(guard = "AuthGuard")]
     async fn member_roles(
-    &self,
-    ctx: &Context<'_>,
-    #[graphql(name = "discordId")] discord_id: String,
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(name = "discordId")] discord_id: String,
     ) -> Result<Option<Vec<String>>> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
-        let roles: Option<Vec<String>> = sqlx::query_scalar(
-            "SELECT roles FROM MemberRoles WHERE discord_id = $1",
-        )
-        .bind(discord_id)
-        .fetch_optional(pool.as_ref())
-        .await?;
+        let roles: Option<Vec<String>> =
+            sqlx::query_scalar("SELECT roles FROM MemberRoles WHERE discord_id = $1")
+                .bind(discord_id)
+                .fetch_optional(pool.as_ref())
+                .await?;
 
         Ok(roles)
     }
-
 }
 
 #[Object]

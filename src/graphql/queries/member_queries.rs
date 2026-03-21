@@ -1,6 +1,8 @@
 use crate::auth::guards::AuthGuard;
 use crate::auth::AuthContext;
-use crate::models::{attendance::AttendanceRecord, status_update::StatusUpdateRecord};
+use crate::models::{
+    attendance::AttendanceRecord, member::MemberRolesResponse, status_update::StatusUpdateRecord,
+};
 use async_graphql::{ComplexObject, Context, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;
@@ -96,7 +98,7 @@ impl MemberQueries {
         &self,
         ctx: &Context<'_>,
         #[graphql(name = "discordId")] discord_id: String,
-    ) -> Result<Option<Vec<String>>> {
+    ) -> Result<MemberRolesResponse> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
         let roles: Option<Vec<String>> =
@@ -105,7 +107,17 @@ impl MemberQueries {
                 .fetch_optional(pool.as_ref())
                 .await?;
 
-        Ok(roles)
+        if let Some(r) = roles {
+            Ok(MemberRolesResponse {
+                exists: true,
+                roles: r,
+            })
+        } else {
+            Ok(MemberRolesResponse {
+                exists: false,
+                roles: vec![],
+            })
+        }
     }
 }
 

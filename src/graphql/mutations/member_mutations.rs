@@ -53,4 +53,30 @@ impl MemberMutations {
 
         Ok(member)
     }
+
+    /// Save the roles of a member in the database
+    #[graphql(name = "saveMemberRoles", guard = "AuthGuard")]
+    async fn save_member_roles(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(name = "discordId")] discord_id: String,
+        roles: Vec<String>,
+    ) -> Result<bool> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO MemberRoles (discord_id, roles)
+            VALUES ($1, $2)
+            ON CONFLICT (discord_id)
+            DO UPDATE SET roles = EXCLUDED.roles
+            "#,
+        )
+        .bind(discord_id)
+        .bind(roles)
+        .execute(pool.as_ref())
+        .await?;
+
+        Ok(true)
+    }
 }

@@ -60,3 +60,9 @@ pub struct UpdateMemberInput {
     pub track: Option<String>,
     pub github_user: Option<String>,
 }
+
+#[derive(SimpleObject)]
+pub struct MemberRolesResponse {
+    pub exists: bool,
+    pub roles: Vec<String>,
+}

@@ -38,10 +38,10 @@ impl Config {
     fn from_env() -> Self {
         let _ = dotenv::dotenv();
         Self {
-            env: std::env::var("ROOT_ENV").unwrap_or_else(|_| "development".to_string()),
-            secret_key: std::env::var("ROOT_SECRET").expect("ROOT_SECRET must be set."),
+            env: std::env::var("ROOT_ENV").unwrap_or("development".to_string()),
+            secret_key: std::env::var("ROOT_SECRET").unwrap_or("insecuresecret".to_string()),
             database_url: std::env::var("ROOT_DB_URL").expect("ROOT_DB_URL must be set."),
-            port: std::env::var("ROOT_PORT").expect("ROOT_PORT must be set."),
+            port: std::env::var("ROOT_PORT").unwrap_or("12345".to_string()),
             seeding_enabled: std::env::var("SEEDING_ENABLED")
                 .map(|v| v.to_lowercase() == "true")
                 .unwrap_or(false),

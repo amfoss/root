@@ -23,15 +23,45 @@ struct Member {
 
 ## Queries
 
-### Get Member
-Retrieve member details by ID, roll number, or Discord ID.
+All queries are split into allMembers and member root queries
+allMembers can be filtered by year or track, while member needs memberId or email
 
+### Details of all members
+Retrieve the details of all members optionally fitered by year or track
 ```graphql
 query {
-    getMember(rollNo: "AM.XX.U4XXX") {
+    allMembers (year, track) {
+        memberId
+        rollIo
         name
         email
+        sex
         year
+        hostel
+        macAddress
+        discordId
+        groupId
+        track
+    }
+}
+```
+
+### Details of single member
+Retrieve a single member's details using their either email or memberId
+```graphql
+query {
+    member (memberId:00, email:"something@gmail.com" ) {
+        memberId
+        rollNo
+        name
+        email
+        sex
+        year
+        hostel
+        macAddress
+        discordId
+        groupId
+        track
     }
 }
 ```
@@ -40,7 +70,6 @@ query {
 
 ### Create Member
 Add a new member to the database.
-
 ```graphql
 mutation {
     createMember(
@@ -62,3 +91,28 @@ mutation {
     }
 }
 ``` 
+
+### Update Member
+Update details of an existing member
+```graphql
+mutation {
+    updateMember (
+        input: {
+            memberId
+            rollNo
+            name
+            email
+            sex
+            year
+            hostel
+            macAddress
+            discordId
+            groupId
+            track
+        }
+    ) {
+        memberId
+        name
+    }
+}
+```

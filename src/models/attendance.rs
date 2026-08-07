@@ -31,3 +31,9 @@ pub struct LeaveRecord {
     pub duration: i32,
     pub approved_by: Option<String>,
 }
+
+#[derive(SimpleObject)]
+pub struct CheckLeave {
+    pub message_id: i64,
+    pub approved_by: String,
+}

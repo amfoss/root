@@ -68,6 +68,7 @@ impl AttendanceMutations {
         &self,
         ctx: &Context<'_>,
         discord_id: String,
+        message_id: String,
         reason: String,
         from_date: NaiveDate,
         duration: i32,
@@ -78,12 +79,13 @@ impl AttendanceMutations {
 
         let leave: LeaveRecord = sqlx::query_as::<_, LeaveRecord>(
             "INSERT INTO Leave
-            (discord_id, reason, from_date, duration) 
-            VALUES ($1, $2, $3, $4)
+            (discord_id, message_id, reason, from_date, duration) 
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *
             ",
         )
         .bind(discord_id)
+        .bind(message_id)
         .bind(reason)
         .bind(from_date)
         .bind(duration)

@@ -8,7 +8,7 @@ use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::models::{member::Member, status_update::StatusUpdateStreakRecord};
+use crate::models::{member::Member, status_update::StatusUpdateStreakRecord, attendance::CheckLeave};
 
 #[derive(Default)]
 pub struct MemberQueries;
@@ -125,6 +125,30 @@ impl MemberQueries {
                 exists: false,
                 roles: vec![],
             })
+        }
+    }
+
+    // #[graphql(guard = "AuthGuard")]
+    async fn leave_by_message_id(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(name = "messageId")] message_id: i64,
+    ) -> Result<CheckLeave> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+
+        let row: Option<(i64, Option<String>)> = sqlx::query_as(
+            "SELECT message_id, approved_by FROM Leave WHERE message_id = $1",
+        )
+        .bind(message_id)
+        .fetch_optional(pool.as_ref())
+        .await?;
+
+        match row {
+            Some((msg_id, approved_by)) => Ok(CheckLeave {
+                message_id: msg_id,
+                approved_by: approved_by.unwrap_or_else(|| "bot".to_string()),
+            }),
+            None => Err("No leave found for given message_id".into()),
         }
     }
 }

@@ -35,5 +35,9 @@ pub struct LeaveRecord {
 #[derive(SimpleObject)]
 pub struct CheckLeave {
     pub message_id: i64,
+    pub discord_id: i64,
+    pub from_date: NaiveDate,
+    pub duration: i64,
+    pub applied_at: NaiveDate,
     pub approved_by: String,
 }

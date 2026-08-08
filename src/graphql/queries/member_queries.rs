@@ -8,7 +8,9 @@ use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::models::{member::Member, status_update::StatusUpdateStreakRecord, attendance::CheckLeave};
+use crate::models::{
+    attendance::CheckLeave, member::Member, status_update::StatusUpdateStreakRecord,
+};
 
 #[derive(Default)]
 pub struct MemberQueries;
@@ -128,7 +130,7 @@ impl MemberQueries {
         }
     }
 
-    // #[graphql(guard = "AuthGuard")]
+    #[graphql(guard = "AuthGuard")]
     async fn leave_by_message_id(
         &self,
         ctx: &Context<'_>,
@@ -136,16 +138,20 @@ impl MemberQueries {
     ) -> Result<CheckLeave> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
-        let row: Option<(i64, Option<String>)> = sqlx::query_as(
-            "SELECT message_id, approved_by FROM Leave WHERE message_id = $1",
+        let row: Option<(i64, i64, NaiveDate, i64, NaiveDate, Option<String>)> = sqlx::query_as(
+            "SELECT message_id, discord_id, from_date, duration, applied_at, approved_by FROM Leave WHERE message_id = $1",
         )
         .bind(message_id)
         .fetch_optional(pool.as_ref())
         .await?;
-
+        
         match row {
-            Some((msg_id, approved_by)) => Ok(CheckLeave {
+            Some((msg_id, discord_id, from_date, duration, applied_at, approved_by)) => Ok(CheckLeave {
                 message_id: msg_id,
+                discord_id,
+                from_date,
+                duration,
+                applied_at,
                 approved_by: approved_by.unwrap_or_else(|| "bot".to_string()),
             }),
             None => Err("No leave found for given message_id".into()),

@@ -8,7 +8,9 @@ use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::models::{member::Member, status_update::StatusUpdateStreakRecord};
+use crate::models::{
+    attendance::CheckLeave, member::Member, status_update::StatusUpdateStreakRecord,
+};
 
 #[derive(Default)]
 pub struct MemberQueries;
@@ -59,11 +61,12 @@ impl MemberQueries {
         ctx: &Context<'_>,
         member_id: Option<i32>,
         email: Option<String>,
+        discord_id: Option<String>,
     ) -> Result<Option<Member>> {
         let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context.");
 
-        match (member_id, email) {
-            (Some(id), None) => {
+        match (member_id, email, discord_id) {
+            (Some(id), None, None) => {
                 let member =
                     sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE member_id = $1")
                         .bind(id)
@@ -71,15 +74,22 @@ impl MemberQueries {
                         .await?;
                 Ok(member)
             }
-            (None, Some(email)) => {
+            (None, Some(email), None) => {
                 let member = sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE email = $1")
                     .bind(email)
                     .fetch_optional(pool.as_ref())
                     .await?;
                 Ok(member)
             }
-            (Some(_), Some(_)) => Err("Provide only one of member_id or email".into()),
-            (None, None) => Err("Provide either member_id or email".into()),
+            (None, None, Some(discord_id)) => {
+                let member =
+                    sqlx::query_as::<_, Member>("SELECT * FROM Member WHERE discord_id = $1")
+                        .bind(discord_id)
+                        .fetch_optional(pool.as_ref())
+                        .await?;
+                Ok(member)
+            }
+            _ => Err("Provide exactly one of member_id, email, or discord_id".into()),
         }
     }
 
@@ -117,6 +127,34 @@ impl MemberQueries {
                 exists: false,
                 roles: vec![],
             })
+        }
+    }
+
+    #[graphql(guard = "AuthGuard")]
+    async fn leave_by_message_id(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(name = "messageId")] message_id: i64,
+    ) -> Result<CheckLeave> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+
+        let row: Option<(i64, i64, NaiveDate, i64, NaiveDate, Option<String>)> = sqlx::query_as(
+            "SELECT message_id, discord_id, from_date, duration, applied_at, approved_by FROM Leave WHERE message_id = $1",
+        )
+        .bind(message_id)
+        .fetch_optional(pool.as_ref())
+        .await?;
+        
+        match row {
+            Some((msg_id, discord_id, from_date, duration, applied_at, approved_by)) => Ok(CheckLeave {
+                message_id: msg_id,
+                discord_id,
+                from_date,
+                duration,
+                applied_at,
+                approved_by: approved_by.unwrap_or_else(|| "bot".to_string()),
+            }),
+            None => Err("No leave found for given message_id".into()),
         }
     }
 }
@@ -418,5 +456,42 @@ impl Member {
         AttendanceInfo {
             member_id: self.member_id,
         }
+    }
+
+    async fn leave_count(
+        &self,
+        ctx: &Context<'_>,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+    ) -> Result<i64> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+
+        if end_date < start_date {
+            return Err("end_date must be >= start_date".into());
+        }
+        let discord_id = self
+            .discord_id
+            .as_ref()
+            .expect("Leave count needs discord_id");
+
+        let total: Option<i64> = sqlx::query_scalar(
+            r#"
+            SELECT SUM(
+                LEAST(from_date + duration - 1, $2)
+                - GREATEST(from_date, $1)
+                + 1
+            )
+            FROM leave
+            WHERE from_date <= $2
+              AND (from_date + duration - 1) >= $1
+              AND discord_id = $3
+            "#,
+        )
+        .bind(start_date)
+        .bind(end_date)
+        .bind(discord_id)
+        .fetch_one(pool.as_ref())
+        .await?;
+        Ok(total.unwrap_or(0))
     }
 }

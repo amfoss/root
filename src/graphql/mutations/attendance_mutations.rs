@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
 use async_graphql::{Context, Object, Result};
+use chrono::NaiveDate;
 use chrono_tz::Asia::Kolkata;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use sqlx::PgPool;
 
 use crate::auth::guards::AdminOrBotGuard;
-use crate::models::attendance::{AttendanceRecord, MarkAttendanceInput};
+use crate::models::attendance::{AttendanceRecord, LeaveRecord, MarkAttendanceInput};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -60,5 +61,68 @@ impl AttendanceMutations {
         .await?;
 
         Ok(attendance)
+    }
+
+    #[graphql(name = "leaveApplication", guard = "AdminOrBotGuard")]
+    async fn leave_application(
+        &self,
+        ctx: &Context<'_>,
+        discord_id: String,
+        message_id: String,
+        reason: String,
+        from_date: NaiveDate,
+        duration: i32,
+    ) -> Result<LeaveRecord> {
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
+
+        let leave: LeaveRecord = sqlx::query_as::<_, LeaveRecord>(
+            "INSERT INTO Leave
+            (discord_id, message_id, reason, from_date, duration) 
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *
+            ",
+        )
+        .bind(discord_id)
+        .bind(message_id)
+        .bind(reason)
+        .bind(from_date)
+        .bind(duration)
+        .fetch_one(pool.as_ref())
+        .await?;
+
+        Ok(leave)
+    }
+
+    #[graphql(name = "approveLeave", guard = "AdminOrBotGuard")]
+    async fn approve_leave(
+        &self,
+        ctx: &Context<'_>,
+        discord_id: String,
+        from_date: NaiveDate,
+        approved_by: String,
+    ) -> Result<LeaveRecord> {
+        let pool = ctx
+            .data::<Arc<PgPool>>()
+            .expect("Pool not found in context");
+
+        let leave: LeaveRecord = sqlx::query_as::<_, LeaveRecord>(
+            "UPDATE Leave
+            SET approved_by = $1
+            WHERE discord_id = $2 AND
+            from_date=$3 AND
+            approved_by IS NULL
+            RETURNING *
+            ",
+        )
+        .bind(approved_by)
+        .bind(discord_id)
+        .bind(from_date)
+        .fetch_optional(pool.as_ref())
+        .await?
+        .ok_or_else(|| async_graphql::Error::new("no pending leave found to approve"))?;
+
+        Ok(leave)
     }
 }

@@ -21,3 +21,23 @@ pub struct MarkAttendanceInput {
     pub date: NaiveDate,
     pub hmac_signature: String,
 }
+
+#[derive(SimpleObject, FromRow)]
+pub struct LeaveRecord {
+    pub discord_id: String,
+    pub from_date: NaiveDate,
+    pub applied_at: NaiveDateTime,
+    pub reason: String,
+    pub duration: i32,
+    pub approved_by: Option<String>,
+}
+
+#[derive(SimpleObject)]
+pub struct CheckLeave {
+    pub message_id: i64,
+    pub discord_id: i64,
+    pub from_date: NaiveDate,
+    pub duration: i64,
+    pub applied_at: NaiveDate,
+    pub approved_by: String,
+}

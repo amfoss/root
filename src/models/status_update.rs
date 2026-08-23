@@ -35,3 +35,12 @@ pub struct CreateStatusBreakInput {
     pub member_id: Option<i32>,
     pub reason: Option<String>,
 }
+
+#[derive(SimpleObject, FromRow, Debug, Clone, PartialEq, Eq)]
+pub struct MemberLifeStatusRecord {
+    pub member_id: i32,
+    pub lives: i32,
+    pub recovery_streak: i32,
+    pub is_probation: bool,
+    pub last_reset_month: i32,
+}

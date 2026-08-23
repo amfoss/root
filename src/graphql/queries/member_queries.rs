@@ -8,6 +8,7 @@ use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
+use crate::models::status_update::MemberLifeStatusRecord;
 use crate::models::{member::Member, status_update::StatusUpdateStreakRecord};
 
 #[derive(Default)]
@@ -261,6 +262,18 @@ impl StatusInfo {
             .await?;
 
         Ok(result)
+    }
+
+    async fn life_status(&self, ctx: &Context<'_>) -> Result<Option<MemberLifeStatusRecord>> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+        let status = sqlx::query_as::<_, MemberLifeStatusRecord>(
+            "SELECT member_id, lives, recovery_streak, is_probation, last_reset_month
+             FROM MemberLifeStatus WHERE member_id = $1",
+        )
+        .bind(self.member_id)
+        .fetch_optional(pool.as_ref())
+        .await?;
+        Ok(status)
     }
 }
 

@@ -1,13 +1,24 @@
-use async_graphql::{Context, Object, Result};
+use async_graphql::{Context, InputObject, Object, Result};
 use chrono::NaiveDate;
 use sqlx::PgPool;
 use std::sync::Arc;
 
 use crate::auth::guards::{AdminGuard, AdminOrBotGuard};
-use crate::models::status_update::{CreateStatusBreakInput, StatusBreakRecord, StatusUpdateRecord};
+use crate::models::status_update::{
+    CreateStatusBreakInput, MemberLifeStatusRecord, StatusBreakRecord, StatusUpdateRecord,
+};
 
 #[derive(Default)]
 pub struct StatusMutations;
+
+#[derive(InputObject)]
+struct UpdateLifeStatusInput {
+    member_id: i32,
+    lives: i32,
+    recovery_streak: i32,
+    is_probation: bool,
+    last_reset_month: i32,
+}
 
 #[Object]
 impl StatusMutations {
@@ -34,6 +45,44 @@ impl StatusMutations {
         .await?;
 
         Ok(status)
+    }
+
+    #[graphql(name = "updateLifeStatus", guard = "AdminOrBotGuard")]
+    async fn update_life_status(
+        &self,
+        ctx: &Context<'_>,
+        input: UpdateLifeStatusInput,
+    ) -> Result<MemberLifeStatusRecord> {
+        let pool = ctx.data::<Arc<PgPool>>().expect("Pool must be in context");
+
+        if input.lives < 0 || input.lives > 3 {
+            return Err("lives must be between 0 and 3".into());
+        }
+        if input.recovery_streak < 0 || input.recovery_streak > 3 {
+            return Err("recovery_streak must be between 0 and 3".into());
+        }
+
+        let record = sqlx::query_as::<_, MemberLifeStatusRecord>(
+            "INSERT INTO MemberLifeStatus
+                (member_id, lives, recovery_streak, is_probation, last_reset_month, updated_at)
+             VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+             ON CONFLICT (member_id) DO UPDATE SET
+                 lives = EXCLUDED.lives,
+                 recovery_streak = EXCLUDED.recovery_streak,
+                 is_probation = EXCLUDED.is_probation,
+                 last_reset_month = EXCLUDED.last_reset_month,
+                 updated_at = CURRENT_TIMESTAMP
+             RETURNING member_id, lives, recovery_streak, is_probation, last_reset_month",
+        )
+        .bind(input.member_id)
+        .bind(input.lives)
+        .bind(input.recovery_streak)
+        .bind(input.is_probation)
+        .bind(input.last_reset_month)
+        .fetch_one(pool.as_ref())
+        .await?;
+
+        Ok(record)
     }
 
     #[graphql(name = "createStatusBreak", guard = "AdminGuard")]
